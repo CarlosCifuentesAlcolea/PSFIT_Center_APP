@@ -1,4 +1,4 @@
-# Forja - Sistema de gestion de gimnasio
+# PSFIT CENTER - Sistema de gestion de gimnasio
 
 Base del proyecto: gestion de socios, control de productos/stock y contabilidad basica (ingresos y gastos).
 
