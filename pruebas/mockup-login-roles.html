@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PS FIT — Mockup login y roles</title>
+<style>
+  :root {
+    --brand: #E8B33D;
+    --brand-dark: #BA7517;
+    --neutral-50: #fafafa;
+    --neutral-100: #f5f5f5;
+    --neutral-200: #e5e5e5;
+    --neutral-400: #a3a3a3;
+    --neutral-500: #737373;
+    --neutral-600: #525252;
+    --neutral-800: #262626;
+    --green-100: #dcfce7;
+    --green-600: #16a34a;
+    --green-700: #15803d;
+    --red-100: #fee2e2;
+    --red-600: #dc2626;
+    --amber-100: #fef3c7;
+    --amber-700: #b45309;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--neutral-800);
+    background: #fff;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, select { font-family: inherit; }
+
+  .hidden { display: none !important; }
+
+  /* --- Login --- */
+  #pantalla-login {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-caja {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .login-titulo {
+    font-size: 18px;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .input {
+    border: 1px solid var(--neutral-200);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+  .btn-primario {
+    background: var(--brand-dark);
+    color: #fff;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 8px;
+    border: none;
+  }
+  .demo-nota {
+    font-size: 12px;
+    color: var(--neutral-500);
+    text-align: center;
+    margin-top: 4px;
+  }
+  .demo-roles {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .btn-demo {
+    flex: 1;
+    background: var(--neutral-100);
+    color: var(--neutral-600);
+    border: 1px solid var(--neutral-200);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .btn-demo:hover { background: var(--neutral-200); }
+
+  /* --- App shell --- */
+  #app {
+    height: 100vh;
+    display: flex;
+  }
+  .sidebar {
+    width: 224px;
+    background: var(--neutral-50);
+    border-right: 1px solid var(--neutral-200);
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 4px;
+  }
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px 20px;
+  }
+  .sidebar-logo .badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(232, 179, 61, 0.2);
+    color: var(--brand-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .sidebar-logo span { font-weight: 500; }
+  .nav-item {
+    text-align: left;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    background: none;
+    border: none;
+    color: var(--neutral-600);
+  }
+  .nav-item:hover { background: var(--neutral-100); }
+  .nav-item.activo {
+    background: rgba(232, 179, 61, 0.2);
+    color: var(--brand-dark);
+    font-weight: 500;
+  }
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--neutral-200);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sidebar-footer .quien {
+    padding: 0 12px;
+    font-size: 12px;
+    color: var(--neutral-400);
+  }
+  .rol-tag { text-transform: capitalize; }
+
+  .contenido {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  header.cabecera {
+    border-bottom: 1px solid var(--neutral-200);
+    padding: 16px 24px;
+  }
+  header.cabecera p {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  main {
+    flex: 1;
+    overflow: auto;
+    padding: 24px;
+  }
+
+  .metricas {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .tarjeta {
+    background: var(--neutral-50);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .tarjeta .etiqueta {
+    font-size: 12px;
+    color: var(--neutral-400);
+    margin: 0 0 4px;
+  }
+  .tarjeta .valor {
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0;
+  }
+  .dos-columnas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .lista-fila {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+
+  form.formulario {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  form.formulario .input { flex: 1; }
+  .input.w-24 { flex: none; width: 96px; }
+  .input.w-20 { flex: none; width: 80px; }
+  .input.w-28 { flex: none; width: 112px; }
+
+  table {
+    width: 100%;
+    font-size: 14px;
+    border-collapse: collapse;
+  }
+  thead tr {
+    text-align: left;
+    color: var(--neutral-400);
+    border-bottom: 1px solid var(--neutral-200);
+  }
+  thead th { padding: 8px 0; font-weight: 400; }
+  tbody tr { border-bottom: 1px solid var(--neutral-100); }
+  tbody td { padding: 10px 0; }
+  .text-right { text-align: right; }
+  .text-red { color: var(--red-600); }
+  .text-green { color: var(--green-600); }
+  .text-muted { color: var(--neutral-500); }
+
+  .pill {
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    display: inline-block;
+  }
+  .pill-al-dia { background: var(--green-100); color: var(--green-700); }
+  .pill-pendiente { background: var(--amber-100); color: var(--amber-700); }
+  .pill-baja { background: var(--red-100); color: var(--red-600); }
+
+  .link-eliminar {
+    background: none;
+    border: none;
+    color: var(--neutral-400);
+    font-size: 12px;
+  }
+  .link-eliminar:hover { color: var(--red-600); }
+
+  .banner-demo {
+    background: rgba(232, 179, 61, 0.15);
+    border: 1px solid var(--brand);
+    color: var(--brand-dark);
+    font-size: 12px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner-demo">Mockup de navegación — datos de ejemplo, sin conexión al backend real.</div>
+
+<div id="pantalla-login">
+  <div class="login-caja">
+    <p class="login-titulo">PS FIT</p>
+    <input class="input" placeholder="Email" value="admin@psfit.local" />
+    <input class="input" type="password" placeholder="Contraseña" value="••••••••" />
+    <button class="btn-primario" onclick="entrar('admin')">Entrar</button>
+    <p class="demo-nota">Acceso rápido para la demo:</p>
+    <div class="demo-roles">
+      <button class="btn-demo" onclick="entrar('admin')">Ver como Admin</button>
+      <button class="btn-demo" onclick="entrar('recepcion')">Ver como Recepción</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="badge">PS</div>
+      <span>PS FIT Center</span>
+    </div>
+    <button class="nav-item" data-tab="panel" onclick="cambiarTab('panel')">Panel</button>
+    <button class="nav-item" data-tab="usuarios" onclick="cambiarTab('usuarios')">Usuarios</button>
+    <button class="nav-item" data-tab="productos" onclick="cambiarTab('productos')">Productos</button>
+    <button class="nav-item" data-tab="contabilidad" id="nav-contabilidad" onclick="cambiarTab('contabilidad')">Contabilidad</button>
+    <div class="sidebar-footer">
+      <p class="quien"><span id="footer-nombre"></span> · <span class="rol-tag" id="footer-rol"></span></p>
+      <button class="nav-item" onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </nav>
+
+  <div class="contenido">
+    <header class="cabecera"><p id="titulo-vista">Panel</p></header>
+    <main>
+
+      <section id="vista-panel">
+        <div class="metricas">
+          <div class="tarjeta"><p class="etiqueta">Socios activos</p><p class="valor">3</p></div>
+          <div class="tarjeta"><p class="etiqueta">Ingresos del mes</p><p class="valor text-green">1.980,00 €</p></div>
+          <div class="tarjeta"><p class="etiqueta">Gastos del mes</p><p class="valor text-red">860,00 €</p></div>
+          <div class="tarjeta"><p class="etiqueta">Stock bajo</p><p class="valor">2 productos</p></div>
+        </div>
+        <div class="dos-columnas">
+          <div class="tarjeta">
+            <p style="font-size:14px;font-weight:500;margin:0 0 12px;">Altas recientes</p>
+            <div class="lista-fila"><span>Laura Ibañez</span><span class="text-muted">mensual</span></div>
+            <div class="lista-fila" style="margin-top:8px;"><span>Pedro Salas</span><span class="text-muted">anual</span></div>
+            <div class="lista-fila" style="margin-top:8px;"><span>David Roca</span><span class="text-muted">mensual</span></div>
+          </div>
+          <div class="tarjeta">
+            <p style="font-size:14px;font-weight:500;margin:0 0 12px;">Avisos de stock</p>
+            <div class="lista-fila"><span>Proteina vainilla 1kg</span><span class="text-red">2 uds.</span></div>
+            <div class="lista-fila" style="margin-top:8px;"><span>Shaker 600ml</span><span class="text-red">1 uds.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="vista-usuarios" class="hidden">
+        <form class="formulario" onsubmit="return false;">
+          <input class="input" placeholder="Nombre del socio" />
+          <input class="input" placeholder="Email" />
+          <select class="input">
+            <option>Mensual</option><option>Anual</option><option>Bono</option>
+          </select>
+          <button class="btn-primario" type="submit">Añadir socio</button>
+        </form>
+        <table>
+          <thead><tr><th>Nombre</th><th>Plan</th><th>Estado</th><th>Próximo pago</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Laura Ibañez</td><td class="text-muted">mensual</td>
+              <td><span class="pill pill-al-dia">al dia</span></td>
+              <td class="text-muted">15/07/2026</td>
+              <td class="text-right"><button class="link-eliminar solo-admin">Eliminar</button></td>
+            </tr>
+            <tr>
+              <td>Pedro Salas</td><td class="text-muted">anual</td>
+              <td><span class="pill pill-al-dia">al dia</span></td>
+              <td class="text-muted">03/03/2027</td>
+              <td class="text-right"><button class="link-eliminar solo-admin">Eliminar</button></td>
+            </tr>
+            <tr>
+              <td>David Roca</td><td class="text-muted">mensual</td>
+              <td><span class="pill pill-pendiente">pendiente</span></td>
+              <td class="text-muted">03/07/2026</td>
+              <td class="text-right"><button class="link-eliminar solo-admin">Eliminar</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="vista-productos" class="hidden">
+        <form class="formulario" onsubmit="return false;">
+          <input class="input" placeholder="Nombre del producto" />
+          <input class="input" placeholder="Categoría" />
+          <input class="input w-24" placeholder="Precio" />
+          <input class="input w-20" placeholder="Stock" />
+          <button class="btn-primario" type="submit">Añadir</button>
+        </form>
+        <table>
+          <thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th class="text-right">Precio</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Proteina vainilla 1kg</td><td class="text-muted">Suplementos</td>
+              <td class="text-red">2 uds.</td><td class="text-right">28,00 €</td>
+              <td class="text-right"><button class="link-eliminar solo-admin">Eliminar</button></td>
+            </tr>
+            <tr>
+              <td>Shaker 600ml</td><td class="text-muted">Accesorios</td>
+              <td class="text-red">1 uds.</td><td class="text-right">6,50 €</td>
+              <td class="text-right"><button class="link-eliminar solo-admin">Eliminar</button></td>
+            </tr>
+            <tr>
+              <td>Toalla microfibra</td><td class="text-muted">Accesorios</td>
+              <td>18 uds.</td><td class="text-right">9,90 €</td>
+              <td class="text-right"><button class="link-eliminar solo-admin">Eliminar</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="vista-contabilidad" class="hidden">
+        <div class="dos-columnas" style="margin-bottom:16px;">
+          <div class="tarjeta"><p class="etiqueta">Total ingresos</p><p class="valor text-green">1.980,00 €</p></div>
+          <div class="tarjeta"><p class="etiqueta">Total gastos</p><p class="valor text-red">860,00 €</p></div>
+        </div>
+        <form class="formulario" onsubmit="return false;">
+          <select class="input"><option>Ingreso</option><option>Gasto</option></select>
+          <input class="input" placeholder="Concepto" />
+          <input class="input w-28" placeholder="Importe" />
+          <button class="btn-primario" type="submit">Registrar</button>
+        </form>
+        <table>
+          <thead><tr><th>Fecha</th><th>Concepto</th><th class="text-right">Importe</th></tr></thead>
+          <tbody>
+            <tr><td class="text-muted">03/07/2026</td><td>Cuotas mensuales</td><td class="text-right text-green">+1.980,00 €</td></tr>
+            <tr><td class="text-muted">01/07/2026</td><td>Reposición suplementos</td><td class="text-right text-red">−410,00 €</td></tr>
+            <tr><td class="text-muted">29/06/2026</td><td>Mantenimiento máquinas</td><td class="text-right text-red">−450,00 €</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  var rolActual = null;
+  var TITULOS = { panel: 'Panel', usuarios: 'Usuarios', productos: 'Productos', contabilidad: 'Contabilidad' };
+
+  function entrar(rol) {
+    rolActual = rol;
+    document.getElementById('pantalla-login').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('footer-nombre').textContent = rol === 'admin' ? 'Administrador' : 'Recepción';
+    document.getElementById('footer-rol').textContent = rol;
+
+    var esAdmin = rol === 'admin';
+    document.getElementById('nav-contabilidad').classList.toggle('hidden', !esAdmin);
+    document.querySelectorAll('.solo-admin').forEach(function (el) {
+      el.classList.toggle('hidden', !esAdmin);
+    });
+
+    cambiarTab('panel');
+  }
+
+  function cambiarTab(tab) {
+    if (tab === 'contabilidad' && rolActual !== 'admin') tab = 'panel';
+
+    document.querySelectorAll('.nav-item[data-tab]').forEach(function (btn) {
+      btn.classList.toggle('activo', btn.dataset.tab === tab);
+    });
+    ['panel', 'usuarios', 'productos', 'contabilidad'].forEach(function (t) {
+      document.getElementById('vista-' + t).classList.toggle('hidden', t !== tab);
+    });
+    document.getElementById('titulo-vista').textContent = TITULOS[tab];
+  }
+
+  function cerrarSesion() {
+    rolActual = null;
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('pantalla-login').classList.remove('hidden');
+  }
+</script>
+
+</body>
+</html>
