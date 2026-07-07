@@ -1,4 +1,4 @@
-![Logo de PSFIT](./assets/logo.jpg)
+![Logo de PSFIT](./assets/logo_4.png)
 
 # PSFIT CENTER - Sistema de gestion de gimnasio
 
@@ -8,7 +8,7 @@ Base del proyecto: gestion de socios, control de productos/stock y contabilidad 
 
 - **Frontend**: Electron + React + Vite + Tailwind CSS (facil de migrar a web en el futuro, ya que es una app web empaquetada)
 - **Backend**: Node.js + Express (API REST)
-- **Base de datos**: PostgreSQL en la nube (recomendado: Neon, Supabase o Railway, todos con plan gratuito)
+- **Base de datos**: MySQL / MariaDB (en local vale con XAMPP; en produccion cualquier proveedor compatible con MySQL, ej. PlanetScale, Railway o Aiven)
 
 ## Estructura del proyecto
 
@@ -18,7 +18,7 @@ gimnasio-app/
 │   ├── db/
 │   │   ├── schema.sql    Estructura de las tablas
 │   │   ├── init.js       Script para crear tablas y datos de ejemplo
-│   │   └── pool.js       Conexion a PostgreSQL
+│   │   └── pool.js       Conexion a MySQL/MariaDB
 │   ├── routes/           Endpoints: socios, productos, movimientos, dashboard
 │   └── server.js         Punto de entrada de la API
 └── frontend/         Aplicacion de escritorio (Electron + React)
@@ -30,14 +30,16 @@ gimnasio-app/
 
 ### 1. Base de datos
 
-Crea una base de datos PostgreSQL gratuita en [neon.tech](https://neon.tech), [supabase.com](https://supabase.com) o [railway.app](https://railway.app). Copia la cadena de conexion que te den (algo como `postgresql://usuario:password@host/basedatos`).
+**En local (recomendado para desarrollo):** instala [XAMPP](https://www.apachefriends.org/) y arranca el modulo MySQL. Crea una base de datos vacia (por ejemplo `psfitcenter`) desde phpMyAdmin. Anota el puerto que uses (por defecto 3306, o el que hayas configurado si tienes mas de una instancia).
+
+**En la nube (para produccion):** cualquier proveedor compatible con MySQL sirve, por ejemplo [PlanetScale](https://planetscale.com), Railway o Aiven. Copia la cadena de conexion que te den (formato `mysql://usuario:password@host:puerto/basedatos`).
 
 ### 2. Backend
 
 ```bash
 cd backend
 npm install
-cp .env.example .env
+copy .env.example .env
 ```
 
 Edita `.env` y pega tu `DATABASE_URL`. Despues crea las tablas y los datos de ejemplo:
@@ -68,14 +70,13 @@ Esto abre la app de escritorio conectada a tu API local.
 
 ## Como seguir construyendo
 
-Este es el esqueleto funcional: ya puedes dar de alta socios, productos y movimientos, y ver el panel con metricas en tiempo real. Los siguientes pasos logicos son:
+Este es el esqueleto funcional: ya puedes dar de alta socios, productos y movimientos, iniciar sesion con roles (admin/recepcion) y ver el panel con metricas en tiempo real. Los siguientes pasos logicos son:
 
-1. **Autenticacion**: login para el personal (roles: admin, recepcion)
-2. **Pagos y renovaciones**: marcar cuotas como pagadas, recordatorios automaticos
-3. **Ventas de productos vinculadas a stock**: que al vender un producto se descuente del inventario automaticamente y se genere el movimiento contable
-4. **Empaquetado**: usar `electron-builder` para generar el instalador (.exe / .dmg) cuando este lista para entregar
+1. **Pagos y renovaciones**: marcar cuotas como pagadas, recordatorios automaticos
+2. **Ventas de productos vinculadas a stock**: que al vender un producto se descuente del inventario automaticamente y se genere el movimiento contable
+3. **Empaquetado**: usar `electron-builder` para generar el instalador (.exe / .dmg) cuando este lista para entregar
 
 ## Notas
 
-- Los datos son compartidos en la nube, asi que 2-3 puestos pueden trabajar a la vez sin pisarse (el backend centraliza el acceso a la base de datos)
+- Si usas XAMPP en local, la base de datos solo es accesible desde tu propia maquina; para que 2-3 puestos compartan los mismos datos hay que usar una base MySQL en la nube (ver seccion "Base de datos") o exponer el MySQL de XAMPP en red.
 - Cuando quieras la version web, el `frontend/src` se reutiliza casi entero, solo cambia el empaquetado (Electron -> despliegue web normal)

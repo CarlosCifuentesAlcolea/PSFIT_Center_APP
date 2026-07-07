@@ -6,13 +6,17 @@ import Panel from './components/Panel.jsx';
 import Usuarios from './components/Usuarios.jsx';
 import Productos from './components/Productos.jsx';
 import Contabilidad from './components/Contabilidad.jsx';
+import Personal from './components/Personal.jsx';
 
 const TITLES = {
   panel: 'Panel',
   usuarios: 'Usuarios',
   productos: 'Productos',
-  contabilidad: 'Contabilidad'
+  contabilidad: 'Contabilidad',
+  personal: 'Personal'
 };
+
+const TABS_SOLO_ADMIN = ['contabilidad', 'personal'];
 
 export default function App() {
   const [tab, setTab] = useState('panel');
@@ -33,7 +37,7 @@ export default function App() {
   if (!usuario) return <Login onLogin={setUsuario} />;
 
   const esAdmin = usuario.rol === 'admin';
-  const tabActiva = tab === 'contabilidad' && !esAdmin ? 'panel' : tab;
+  const tabActiva = TABS_SOLO_ADMIN.includes(tab) && !esAdmin ? 'panel' : tab;
 
   return (
     <div className="h-screen flex bg-white text-neutral-800">
@@ -47,6 +51,7 @@ export default function App() {
           {tabActiva === 'usuarios' && <Usuarios usuario={usuario} />}
           {tabActiva === 'productos' && <Productos usuario={usuario} />}
           {tabActiva === 'contabilidad' && esAdmin && <Contabilidad />}
+          {tabActiva === 'personal' && esAdmin && <Personal />}
         </main>
       </div>
     </div>

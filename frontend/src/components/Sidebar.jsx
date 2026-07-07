@@ -2,11 +2,12 @@ const NAV_ITEMS = [
   { key: 'panel', label: 'Panel' },
   { key: 'usuarios', label: 'Usuarios' },
   { key: 'productos', label: 'Productos' },
-  { key: 'contabilidad', label: 'Contabilidad' }
+  { key: 'contabilidad', label: 'Contabilidad', soloAdmin: true },
+  { key: 'personal', label: 'Personal', soloAdmin: true }
 ];
 
 export default function Sidebar({ active, onChange, usuario, onLogout }) {
-  const items = NAV_ITEMS.filter((item) => item.key !== 'contabilidad' || usuario.rol === 'admin');
+  const items = NAV_ITEMS.filter((item) => !item.soloAdmin || usuario.rol === 'admin');
 
   return (
     <nav className="w-56 bg-neutral-50 border-r border-neutral-200 flex flex-col p-3 gap-1">

@@ -7,12 +7,12 @@ const { requireAuth } = require('../middleware/auth');
 
 // Iniciar sesion
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: 'email y password son obligatorios' });
+  const { nombre, password } = req.body;
+  if (!nombre || !password) {
+    return res.status(400).json({ error: 'nombre y password son obligatorios' });
   }
   try {
-    const { rows } = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+    const { rows } = await pool.query('SELECT * FROM usuarios WHERE nombre = ?', [nombre]);
     const usuario = rows[0];
     const passwordValida = usuario && (await bcrypt.compare(password, usuario.password_hash));
     if (!passwordValida) {

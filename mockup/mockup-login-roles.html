@@ -270,13 +270,13 @@
 <div id="pantalla-login">
   <div class="login-caja">
     <p class="login-titulo">PS FIT</p>
-    <input class="input" placeholder="Email" value="admin@psfit.local" />
+    <input class="input" placeholder="Nombre" value="Administrador" />
     <input class="input" type="password" placeholder="Contraseña" value="••••••••" />
     <button class="btn-primario" onclick="entrar('admin')">Entrar</button>
     <p class="demo-nota">Acceso rápido para la demo:</p>
     <div class="demo-roles">
       <button class="btn-demo" onclick="entrar('admin')">Ver como Admin</button>
-      <button class="btn-demo" onclick="entrar('recepcion')">Ver como Recepción</button>
+      <button class="btn-demo" onclick="entrar('empleado')">Ver como Empleado</button>
     </div>
   </div>
 </div>
@@ -420,7 +420,7 @@
     rolActual = rol;
     document.getElementById('pantalla-login').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
-    document.getElementById('footer-nombre').textContent = rol === 'admin' ? 'Administrador' : 'Recepción';
+    document.getElementById('footer-nombre').textContent = rol === 'admin' ? 'Administrador' : 'Pepe';
     document.getElementById('footer-rol').textContent = rol;
 
     var esAdmin = rol === 'admin';

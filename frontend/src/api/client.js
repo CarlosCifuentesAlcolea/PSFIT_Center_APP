@@ -20,10 +20,10 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  login: async (email, password) => {
+  login: async (nombre, password) => {
     const { token, usuario } = await request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ nombre, password })
     });
     localStorage.setItem(TOKEN_KEY, token);
     return usuario;
@@ -45,5 +45,10 @@ export const api = {
 
   getMovimientos: () => request('/movimientos'),
   crearMovimiento: (data) => request('/movimientos', { method: 'POST', body: JSON.stringify(data) }),
-  eliminarMovimiento: (id) => request(`/movimientos/${id}`, { method: 'DELETE' })
+  eliminarMovimiento: (id) => request(`/movimientos/${id}`, { method: 'DELETE' }),
+
+  getUsuarios: () => request('/usuarios'),
+  crearUsuario: (data) => request('/usuarios', { method: 'POST', body: JSON.stringify(data) }),
+  actualizarUsuario: (id, data) => request(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  eliminarUsuario: (id) => request(`/usuarios/${id}`, { method: 'DELETE' })
 };

@@ -6,15 +6,15 @@ const pool = require('../db/pool');
 router.get('/', async (req, res) => {
   try {
     const socios = await pool.query(
-      "SELECT COUNT(*) FROM socios WHERE estado != 'baja'"
+      "SELECT COUNT(*) AS count FROM socios WHERE estado != 'baja'"
     );
     const ingresos = await pool.query(
       `SELECT COALESCE(SUM(importe), 0) AS total FROM movimientos
-       WHERE tipo = 'ingreso' AND date_trunc('month', fecha) = date_trunc('month', CURRENT_DATE)`
+       WHERE tipo = 'ingreso' AND YEAR(fecha) = YEAR(CURDATE()) AND MONTH(fecha) = MONTH(CURDATE())`
     );
     const gastos = await pool.query(
       `SELECT COALESCE(SUM(importe), 0) AS total FROM movimientos
-       WHERE tipo = 'gasto' AND date_trunc('month', fecha) = date_trunc('month', CURRENT_DATE)`
+       WHERE tipo = 'gasto' AND YEAR(fecha) = YEAR(CURDATE()) AND MONTH(fecha) = MONTH(CURDATE())`
     );
     const stockBajo = await pool.query(
       'SELECT * FROM productos WHERE stock <= stock_minimo ORDER BY stock ASC'

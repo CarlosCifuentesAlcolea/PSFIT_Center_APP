@@ -18,12 +18,12 @@ router.post('/', async (req, res) => {
   const { nombre, email, telefono, plan, estado, proximo_pago } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre es obligatorio' });
   try {
-    const { rows } = await pool.query(
+    const { insertId } = await pool.query(
       `INSERT INTO socios (nombre, email, telefono, plan, estado, proximo_pago)
-       VALUES ($1, $2, $3, COALESCE($4, 'mensual'), COALESCE($5, 'al_dia'), $6)
-       RETURNING *`,
+       VALUES (?, ?, ?, COALESCE(?, 'mensual'), COALESCE(?, 'al_dia'), ?)`,
       [nombre, email, telefono, plan, estado, proximo_pago]
     );
+    const { rows } = await pool.query('SELECT * FROM socios WHERE id = ?', [insertId]);
     res.status(201).json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -35,12 +35,14 @@ router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, email, telefono, plan, estado, proximo_pago } = req.body;
   try {
-    const { rows } = await pool.query(
-      `UPDATE socios SET nombre = $1, email = $2, telefono = $3, plan = $4, estado = $5, proximo_pago = $6
-       WHERE id = $7 RETURNING *`,
+    const { affectedRows } = await pool.query(
+      `UPDATE socios SET nombre = ?, email = ?, telefono = ?, plan = ?,
+       estado = COALESCE(?, estado), proximo_pago = COALESCE(?, proximo_pago)
+       WHERE id = ?`,
       [nombre, email, telefono, plan, estado, proximo_pago, id]
     );
-    if (rows.length === 0) return res.status(404).json({ error: 'Socio no encontrado' });
+    if (affectedRows === 0) return res.status(404).json({ error: 'Socio no encontrado' });
+    const { rows } = await pool.query('SELECT * FROM socios WHERE id = ?', [id]);
     res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -50,7 +52,7 @@ router.put('/:id', async (req, res) => {
 // Eliminar un socio
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
-    await pool.query('DELETE FROM socios WHERE id = $1', [req.params.id]);
+    await pool.query('DELETE FROM socios WHERE id = ?', [req.params.id]);
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });

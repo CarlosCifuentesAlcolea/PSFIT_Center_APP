@@ -7,10 +7,13 @@ const ESTADO_STYLES = {
   baja: 'bg-red-100 text-red-700'
 };
 
+const VACIO = { nombre: '', email: '', telefono: '', plan: 'mensual' };
+
 export default function Usuarios({ usuario }) {
   const [socios, setSocios] = useState([]);
   const [error, setError] = useState('');
-  const [nuevo, setNuevo] = useState({ nombre: '', email: '', telefono: '', plan: 'mensual' });
+  const [nuevo, setNuevo] = useState(VACIO);
+  const [editandoId, setEditandoId] = useState(null);
 
   function cargar() {
     api.getSocios().then(setSocios).catch((e) => setError(e.message));
@@ -18,12 +21,27 @@ export default function Usuarios({ usuario }) {
 
   useEffect(cargar, []);
 
-  async function crearSocio(e) {
+  function editar(s) {
+    setEditandoId(s.id);
+    setNuevo({ nombre: s.nombre, email: s.email || '', telefono: s.telefono || '', plan: s.plan });
+  }
+
+  function cancelarEdicion() {
+    setEditandoId(null);
+    setNuevo(VACIO);
+  }
+
+  async function guardarSocio(e) {
     e.preventDefault();
     if (!nuevo.nombre) return;
     try {
-      await api.crearSocio(nuevo);
-      setNuevo({ nombre: '', email: '', telefono: '', plan: 'mensual' });
+      if (editandoId) {
+        await api.actualizarSocio(editandoId, nuevo);
+      } else {
+        await api.crearSocio(nuevo);
+      }
+      setEditandoId(null);
+      setNuevo(VACIO);
       cargar();
     } catch (e) {
       setError(e.message);
@@ -37,7 +55,7 @@ export default function Usuarios({ usuario }) {
 
   return (
     <div>
-      <form onSubmit={crearSocio} className="flex gap-2 mb-4">
+      <form onSubmit={guardarSocio} className="flex gap-2 mb-4">
         <input
           className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1"
           placeholder="Nombre del socio"
@@ -60,8 +78,17 @@ export default function Usuarios({ usuario }) {
           <option value="bono">Bono</option>
         </select>
         <button className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg" type="submit">
-          Añadir socio
+          {editandoId ? 'Guardar cambios' : 'Añadir socio'}
         </button>
+        {editandoId && (
+          <button
+            type="button"
+            onClick={cancelarEdicion}
+            className="text-neutral-500 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100"
+          >
+            Cancelar
+          </button>
+        )}
       </form>
 
       {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
@@ -89,7 +116,10 @@ export default function Usuarios({ usuario }) {
               <td className="py-2.5 text-neutral-500">
                 {s.proximo_pago ? new Date(s.proximo_pago).toLocaleDateString('es-ES') : '—'}
               </td>
-              <td className="py-2.5 text-right">
+              <td className="py-2.5 text-right whitespace-nowrap">
+                <button onClick={() => editar(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
+                  Editar
+                </button>
                 {usuario.rol === 'admin' && (
                   <button onClick={() => eliminar(s.id)} className="text-neutral-400 hover:text-red-600 text-xs">
                     Eliminar

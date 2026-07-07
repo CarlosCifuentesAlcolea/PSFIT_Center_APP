@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { api } from '../api/client.js';
 
 export default function Login({ onLogin }) {
-  const [email, setEmail] = useState('');
+  const [nombre, setNombre] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
@@ -12,7 +12,7 @@ export default function Login({ onLogin }) {
     setError('');
     setCargando(true);
     try {
-      const usuario = await api.login(email, password);
+      const usuario = await api.login(nombre, password);
       onLogin(usuario);
     } catch (e) {
       setError(e.message);
@@ -28,10 +28,10 @@ export default function Login({ onLogin }) {
 
         <input
           className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-          placeholder="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Nombre"
+          type="text"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
         />
         <input
           className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"

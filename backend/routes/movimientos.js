@@ -25,12 +25,12 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: "tipo debe ser 'ingreso' o 'gasto'" });
   }
   try {
-    const { rows } = await pool.query(
+    const { insertId } = await pool.query(
       `INSERT INTO movimientos (tipo, concepto, importe, fecha, socio_id, producto_id)
-       VALUES ($1, $2, $3, COALESCE($4, CURRENT_DATE), $5, $6)
-       RETURNING *`,
+       VALUES (?, ?, ?, COALESCE(?, CURRENT_DATE), ?, ?)`,
       [tipo, concepto, importe, fecha, socio_id, producto_id]
     );
+    const { rows } = await pool.query('SELECT * FROM movimientos WHERE id = ?', [insertId]);
     res.status(201).json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
 // Eliminar un movimiento
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
-    await pool.query('DELETE FROM movimientos WHERE id = $1', [req.params.id]);
+    await pool.query('DELETE FROM movimientos WHERE id = ?', [req.params.id]);
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });
