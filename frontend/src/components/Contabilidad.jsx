@@ -9,6 +9,7 @@ export default function Contabilidad() {
   const [movimientos, setMovimientos] = useState([]);
   const [error, setError] = useState('');
   const [nuevo, setNuevo] = useState({ tipo: 'ingreso', concepto: '', importe: '' });
+  const [guardando, setGuardando] = useState(false);
 
   function cargar() {
     api.getMovimientos().then(setMovimientos).catch((e) => setError(e.message));
@@ -21,13 +22,17 @@ export default function Contabilidad() {
 
   async function crearMovimiento(e) {
     e.preventDefault();
-    if (!nuevo.concepto || !nuevo.importe) return;
+    if (!nuevo.concepto || !nuevo.importe || guardando) return;
+    setGuardando(true);
+    setError('');
     try {
       await api.crearMovimiento({ ...nuevo, importe: parseFloat(nuevo.importe) });
       setNuevo({ tipo: 'ingreso', concepto: '', importe: '' });
       cargar();
     } catch (e) {
       setError(e.message);
+    } finally {
+      setGuardando(false);
     }
   }
 
@@ -67,8 +72,12 @@ export default function Contabilidad() {
           value={nuevo.importe}
           onChange={(e) => setNuevo({ ...nuevo, importe: e.target.value })}
         />
-        <button className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg" type="submit">
-          Registrar
+        <button
+          className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
+          type="submit"
+          disabled={guardando}
+        >
+          {guardando ? 'Guardando...' : 'Registrar'}
         </button>
       </form>
 

@@ -10,6 +10,7 @@ export default function Personal() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
   const [nuevo, setNuevo] = useState(VACIO);
+  const [guardando, setGuardando] = useState(false);
 
   function cargar() {
     api.getUsuarios().then(setPersonal).catch((e) => setError(e.message));
@@ -33,8 +34,10 @@ export default function Personal() {
 
   async function guardarUsuario(e) {
     e.preventDefault();
-    if (!nuevo.nombre || !nuevo.telefono) return;
+    if (!nuevo.nombre || !nuevo.telefono || guardando) return;
     if (!editandoId && !nuevo.password) return;
+    setGuardando(true);
+    setError('');
     try {
       if (editandoId) {
         await api.actualizarUsuario(editandoId, nuevo);
@@ -45,6 +48,8 @@ export default function Personal() {
       cargar();
     } catch (e) {
       setError(e.message);
+    } finally {
+      setGuardando(false);
     }
   }
 
@@ -161,8 +166,12 @@ export default function Personal() {
               >
                 Cancelar
               </button>
-              <button className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg" type="submit">
-                {editandoId ? 'Guardar cambios' : 'Añadir'}
+              <button
+                className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
+                type="submit"
+                disabled={guardando}
+              >
+                {guardando ? 'Guardando...' : editandoId ? 'Guardar cambios' : 'Añadir'}
               </button>
             </div>
           </form>

@@ -14,6 +14,7 @@ export default function Usuarios({ usuario }) {
   const [error, setError] = useState('');
   const [nuevo, setNuevo] = useState(VACIO);
   const [editandoId, setEditandoId] = useState(null);
+  const [guardando, setGuardando] = useState(false);
 
   function cargar() {
     api.getSocios().then(setSocios).catch((e) => setError(e.message));
@@ -33,7 +34,9 @@ export default function Usuarios({ usuario }) {
 
   async function guardarSocio(e) {
     e.preventDefault();
-    if (!nuevo.nombre) return;
+    if (!nuevo.nombre || guardando) return;
+    setGuardando(true);
+    setError('');
     try {
       if (editandoId) {
         await api.actualizarSocio(editandoId, nuevo);
@@ -45,6 +48,8 @@ export default function Usuarios({ usuario }) {
       cargar();
     } catch (e) {
       setError(e.message);
+    } finally {
+      setGuardando(false);
     }
   }
 
@@ -77,8 +82,12 @@ export default function Usuarios({ usuario }) {
           <option value="anual">Anual</option>
           <option value="bono">Bono</option>
         </select>
-        <button className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg" type="submit">
-          {editandoId ? 'Guardar cambios' : 'Añadir socio'}
+        <button
+          className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
+          type="submit"
+          disabled={guardando}
+        >
+          {guardando ? 'Guardando...' : editandoId ? 'Guardar cambios' : 'Añadir socio'}
         </button>
         {editandoId && (
           <button

@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:4000/api';
+const API_URL = 'https://psfitcenter-api.onrender.com/api';
 const TOKEN_KEY = 'psfit_token';
 
 async function request(path, options = {}) {

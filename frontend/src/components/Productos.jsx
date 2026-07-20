@@ -5,6 +5,7 @@ export default function Productos({ usuario }) {
   const [productos, setProductos] = useState([]);
   const [error, setError] = useState('');
   const [nuevo, setNuevo] = useState({ nombre: '', categoria: '', precio: '', stock: '' });
+  const [guardando, setGuardando] = useState(false);
 
   function cargar() {
     api.getProductos().then(setProductos).catch((e) => setError(e.message));
@@ -14,7 +15,9 @@ export default function Productos({ usuario }) {
 
   async function crearProducto(e) {
     e.preventDefault();
-    if (!nuevo.nombre || !nuevo.precio) return;
+    if (!nuevo.nombre || !nuevo.precio || guardando) return;
+    setGuardando(true);
+    setError('');
     try {
       await api.crearProducto({
         ...nuevo,
@@ -25,6 +28,8 @@ export default function Productos({ usuario }) {
       cargar();
     } catch (e) {
       setError(e.message);
+    } finally {
+      setGuardando(false);
     }
   }
 
@@ -63,8 +68,12 @@ export default function Productos({ usuario }) {
           value={nuevo.stock}
           onChange={(e) => setNuevo({ ...nuevo, stock: e.target.value })}
         />
-        <button className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg" type="submit">
-          Añadir
+        <button
+          className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
+          type="submit"
+          disabled={guardando}
+        >
+          {guardando ? 'Guardando...' : 'Añadir'}
         </button>
       </form>
 
