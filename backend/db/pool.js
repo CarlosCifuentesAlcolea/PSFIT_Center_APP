@@ -1,6 +1,14 @@
 const mysql = require('mysql2/promise');
 
-const rawPool = mysql.createPool({ uri: process.env.DATABASE_URL, charset: 'utf8mb4' });
+// XAMPP en local no usa SSL; los proveedores en la nube (Aiven, PlanetScale, Railway...)
+// lo exigen. Se activa automaticamente salvo que la conexion sea a localhost/127.0.0.1.
+const esLocal = /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL || '');
+
+const rawPool = mysql.createPool({
+  uri: process.env.DATABASE_URL,
+  charset: 'utf8mb4',
+  ssl: esLocal ? undefined : { rejectUnauthorized: false }
+});
 
 // Normaliza la respuesta de mysql2 para que el resto del codigo pueda hacer
 // siempre `const { rows } = await pool.query(...)` como con un SELECT,

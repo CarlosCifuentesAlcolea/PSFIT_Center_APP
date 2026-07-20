@@ -41,7 +41,7 @@ async function init() {
       ('ingreso', 'Cuotas mensuales', 1980.00, CURDATE()),
       ('gasto', 'Reposicion suplementos', 410.00, CURDATE() - INTERVAL 2 DAY),
       ('gasto', 'Mantenimiento maquinas', 450.00, CURDATE() - INTERVAL 4 DAY)
-    `);
+    `);      
     console.log('Datos de ejemplo insertados.');
   }
 
