@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client.js';
+import Modal from './Modal.jsx';
 
 const EMOJIS = ['🙂', '😎', '💪', '🏋️', '🤸', '🥊', '🏃', '🧘', '⭐', '🔥', '🦸', '🐯'];
 const VACIO = { nombre: '', telefono: '', password: '', rol: 'empleado', emoji: EMOJIS[0] };
@@ -100,13 +101,9 @@ export default function Personal() {
       </table>
 
       {modalAbierto && (
-        <div
-          className="fixed inset-0 bg-black/30 flex items-center justify-center z-10"
-          onClick={() => setModalAbierto(false)}
-        >
+        <Modal onClose={() => setModalAbierto(false)}>
           <form
             onSubmit={guardarUsuario}
-            onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg"
           >
             <p className="text-sm font-medium mb-1">{editandoId ? 'Editar empleado' : 'Añadir empleado'}</p>
@@ -175,7 +172,7 @@ export default function Personal() {
               </button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
     </div>
   );

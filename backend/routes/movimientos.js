@@ -3,12 +3,23 @@ const router = express.Router();
 const pool = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
 
-// Listar movimientos (con filtro opcional de mes actual)
+// Listar movimientos. Sin filtros: ultimos 100. Con ?year (y opcional ?month): todo ese periodo.
 router.get('/', async (req, res) => {
+  const { year, month } = req.query;
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM movimientos ORDER BY fecha DESC, created_at DESC LIMIT 100'
-    );
+    let sql = 'SELECT * FROM movimientos';
+    const params = [];
+    if (year) {
+      sql += ' WHERE YEAR(fecha) = ?';
+      params.push(year);
+      if (month) {
+        sql += ' AND MONTH(fecha) = ?';
+        params.push(month);
+      }
+    }
+    sql += ' ORDER BY fecha DESC, created_at DESC';
+    if (!year) sql += ' LIMIT 100';
+    const { rows } = await pool.query(sql, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });

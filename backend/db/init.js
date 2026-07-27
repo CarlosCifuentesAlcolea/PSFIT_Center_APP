@@ -47,15 +47,19 @@ async function init() {
 
   const { rows: usuariosExistentes } = await pool.query('SELECT COUNT(*) AS count FROM usuarios');
   if (parseInt(usuariosExistentes[0].count, 10) === 0) {
+    if (!process.env.ADMIN_PASSWORD) {
+      throw new Error(
+        'Falta ADMIN_PASSWORD en tu .env. Define ADMIN_EMAIL y ADMIN_PASSWORD antes de correr init-db (no hay contraseña por defecto).'
+      );
+    }
     const email = process.env.ADMIN_EMAIL || 'admin@psfit.local';
-    const password = process.env.ADMIN_PASSWORD || 'admin123';
+    const password = process.env.ADMIN_PASSWORD;
     const passwordHash = await bcrypt.hash(password, 10);
     await pool.query(
       `INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (?, ?, ?, 'admin')`,
       ['Administrador', email, passwordHash]
     );
-    console.log(`Usuario admin creado -> email: ${email} / password: ${password}`);
-    console.log('Define ADMIN_EMAIL y ADMIN_PASSWORD en .env para usar otras credenciales. Cambia la contrasena tras el primer inicio de sesion.');
+    console.log(`Usuario admin creado -> email: ${email}`);
   }
 
   await pool.end();

@@ -21,4 +21,27 @@ async function query(sql, params) {
   return { rows: [], insertId: result.insertId, affectedRows: result.affectedRows };
 }
 
-module.exports = { query, end: () => rawPool.end() };
+// Ejecuta varias queries como una sola transaccion (todo o nada).
+// fn recibe una funcion `query` igual que la de arriba, pero ligada a la misma conexion.
+async function transaction(fn) {
+  const conn = await rawPool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const queryEnTransaccion = async (sql, params) => {
+      const valores = params && params.map((v) => (v === undefined ? null : v));
+      const [result] = await conn.query(sql, valores);
+      if (Array.isArray(result)) return { rows: result };
+      return { rows: [], insertId: result.insertId, affectedRows: result.affectedRows };
+    };
+    const resultado = await fn(queryEnTransaccion);
+    await conn.commit();
+    return resultado;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
+module.exports = { query, transaction, end: () => rawPool.end() };

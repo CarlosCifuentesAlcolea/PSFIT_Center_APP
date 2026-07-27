@@ -50,6 +50,82 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Vender unidades de un producto: descuenta stock y genera el ingreso en contabilidad
+router.post('/:id/vender', async (req, res) => {
+  const { id } = req.params;
+  const cantidad = parseInt(req.body.cantidad, 10);
+  if (!cantidad || cantidad <= 0) {
+    return res.status(400).json({ error: 'La cantidad debe ser un numero mayor que 0' });
+  }
+  try {
+    const resultado = await pool.transaction(async (query) => {
+      const { rows } = await query('SELECT * FROM productos WHERE id = ? FOR UPDATE', [id]);
+      const producto = rows[0];
+      if (!producto) {
+        const err = new Error('Producto no encontrado');
+        err.status = 404;
+        throw err;
+      }
+      if (producto.stock < cantidad) {
+        const err = new Error(`Stock insuficiente (quedan ${producto.stock} uds.)`);
+        err.status = 400;
+        throw err;
+      }
+
+      await query('UPDATE productos SET stock = stock - ? WHERE id = ?', [cantidad, id]);
+      const importe = (parseFloat(producto.precio) * cantidad).toFixed(2);
+      await query(
+        `INSERT INTO movimientos (tipo, concepto, importe, producto_id)
+         VALUES ('ingreso', ?, ?, ?)`,
+        [`Venta de ${cantidad} x ${producto.nombre}`, importe, id]
+      );
+
+      const { rows: actualizado } = await query('SELECT * FROM productos WHERE id = ?', [id]);
+      return actualizado[0];
+    });
+    res.json(resultado);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// Reponer stock de un producto: suma stock y genera el gasto en contabilidad
+router.post('/:id/reponer', async (req, res) => {
+  const { id } = req.params;
+  const cantidad = parseInt(req.body.cantidad, 10);
+  const costo = parseFloat(req.body.costo);
+  if (!cantidad || cantidad <= 0) {
+    return res.status(400).json({ error: 'La cantidad debe ser un numero mayor que 0' });
+  }
+  if (isNaN(costo) || costo < 0) {
+    return res.status(400).json({ error: 'El costo debe ser un numero valido' });
+  }
+  try {
+    const resultado = await pool.transaction(async (query) => {
+      const { rows } = await query('SELECT * FROM productos WHERE id = ? FOR UPDATE', [id]);
+      const producto = rows[0];
+      if (!producto) {
+        const err = new Error('Producto no encontrado');
+        err.status = 404;
+        throw err;
+      }
+
+      await query('UPDATE productos SET stock = stock + ? WHERE id = ?', [cantidad, id]);
+      await query(
+        `INSERT INTO movimientos (tipo, concepto, importe, producto_id)
+         VALUES ('gasto', ?, ?, ?)`,
+        [`Reposición de ${cantidad} x ${producto.nombre}`, costo.toFixed(2), id]
+      );
+
+      const { rows: actualizado } = await query('SELECT * FROM productos WHERE id = ?', [id]);
+      return actualizado[0];
+    });
+    res.json(resultado);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 // Eliminar un producto
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {

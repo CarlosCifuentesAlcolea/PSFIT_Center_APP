@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client.js';
+import Modal from './Modal.jsx';
 
 const ESTADO_STYLES = {
   al_dia: 'bg-green-100 text-green-700',
@@ -7,11 +8,12 @@ const ESTADO_STYLES = {
   baja: 'bg-red-100 text-red-700'
 };
 
-const VACIO = { nombre: '', email: '', telefono: '', plan: 'mensual' };
+const VACIO = { nombre: '', email: '', telefono: '', plan: 'mensual', estado: 'al_dia', proximo_pago: '' };
 
 export default function Usuarios({ usuario }) {
   const [socios, setSocios] = useState([]);
   const [error, setError] = useState('');
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [nuevo, setNuevo] = useState(VACIO);
   const [editandoId, setEditandoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -22,14 +24,25 @@ export default function Usuarios({ usuario }) {
 
   useEffect(cargar, []);
 
-  function editar(s) {
-    setEditandoId(s.id);
-    setNuevo({ nombre: s.nombre, email: s.email || '', telefono: s.telefono || '', plan: s.plan });
-  }
-
-  function cancelarEdicion() {
+  function abrirModalCrear() {
     setEditandoId(null);
     setNuevo(VACIO);
+    setError('');
+    setModalAbierto(true);
+  }
+
+  function abrirModalEditar(s) {
+    setEditandoId(s.id);
+    setNuevo({
+      nombre: s.nombre,
+      email: s.email || '',
+      telefono: s.telefono || '',
+      plan: s.plan,
+      estado: s.estado,
+      proximo_pago: s.proximo_pago ? s.proximo_pago.slice(0, 10) : ''
+    });
+    setError('');
+    setModalAbierto(true);
   }
 
   async function guardarSocio(e) {
@@ -37,14 +50,14 @@ export default function Usuarios({ usuario }) {
     if (!nuevo.nombre || guardando) return;
     setGuardando(true);
     setError('');
+    const datos = { ...nuevo, proximo_pago: nuevo.proximo_pago || null };
     try {
       if (editandoId) {
-        await api.actualizarSocio(editandoId, nuevo);
+        await api.actualizarSocio(editandoId, datos);
       } else {
-        await api.crearSocio(nuevo);
+        await api.crearSocio(datos);
       }
-      setEditandoId(null);
-      setNuevo(VACIO);
+      setModalAbierto(false);
       cargar();
     } catch (e) {
       setError(e.message);
@@ -60,47 +73,16 @@ export default function Usuarios({ usuario }) {
 
   return (
     <div>
-      <form onSubmit={guardarSocio} className="flex gap-2 mb-4">
-        <input
-          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1"
-          placeholder="Nombre del socio"
-          value={nuevo.nombre}
-          onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
-        />
-        <input
-          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1"
-          placeholder="Email"
-          value={nuevo.email}
-          onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })}
-        />
-        <select
-          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-          value={nuevo.plan}
-          onChange={(e) => setNuevo({ ...nuevo, plan: e.target.value })}
-        >
-          <option value="mensual">Mensual</option>
-          <option value="anual">Anual</option>
-          <option value="bono">Bono</option>
-        </select>
+      <div className="flex justify-end mb-4">
         <button
-          className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
-          type="submit"
-          disabled={guardando}
+          onClick={abrirModalCrear}
+          className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg"
         >
-          {guardando ? 'Guardando...' : editandoId ? 'Guardar cambios' : 'Añadir socio'}
+          + Añadir socio
         </button>
-        {editandoId && (
-          <button
-            type="button"
-            onClick={cancelarEdicion}
-            className="text-neutral-500 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100"
-          >
-            Cancelar
-          </button>
-        )}
-      </form>
+      </div>
 
-      {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+      {error && !modalAbierto && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
       <table className="w-full text-sm border-collapse">
         <thead>
@@ -126,7 +108,7 @@ export default function Usuarios({ usuario }) {
                 {s.proximo_pago ? new Date(s.proximo_pago).toLocaleDateString('es-ES') : '—'}
               </td>
               <td className="py-2.5 text-right whitespace-nowrap">
-                <button onClick={() => editar(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
+                <button onClick={() => abrirModalEditar(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
                   Editar
                 </button>
                 {usuario.rol === 'admin' && (
@@ -139,6 +121,83 @@ export default function Usuarios({ usuario }) {
           ))}
         </tbody>
       </table>
+
+      {modalAbierto && (
+        <Modal onClose={() => setModalAbierto(false)}>
+          <form
+            onSubmit={guardarSocio}
+            className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg"
+          >
+            <p className="text-sm font-medium mb-1">{editandoId ? 'Editar socio' : 'Añadir socio'}</p>
+
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Nombre del socio"
+              value={nuevo.nombre}
+              onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
+            />
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Email"
+              value={nuevo.email}
+              onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })}
+            />
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Teléfono"
+              value={nuevo.telefono}
+              onChange={(e) => setNuevo({ ...nuevo, telefono: e.target.value })}
+            />
+            <select
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              value={nuevo.plan}
+              onChange={(e) => setNuevo({ ...nuevo, plan: e.target.value })}
+            >
+              <option value="mensual">Mensual</option>
+              <option value="anual">Anual</option>
+              <option value="bono">Bono</option>
+            </select>
+            {editandoId && (
+              <>
+                <select
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  value={nuevo.estado}
+                  onChange={(e) => setNuevo({ ...nuevo, estado: e.target.value })}
+                >
+                  <option value="al_dia">Al día</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="baja">Baja</option>
+                </select>
+                <input
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  type="date"
+                  value={nuevo.proximo_pago}
+                  onChange={(e) => setNuevo({ ...nuevo, proximo_pago: e.target.value })}
+                />
+              </>
+            )}
+
+            {error && <p className="text-red-600 text-sm">{error}</p>}
+
+            <div className="flex justify-end gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setModalAbierto(false)}
+                className="text-neutral-500 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100"
+              >
+                Cancelar
+              </button>
+              <button
+                className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
+                type="submit"
+                disabled={guardando}
+              >
+                {guardando ? 'Guardando...' : editandoId ? 'Guardar cambios' : 'Añadir'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

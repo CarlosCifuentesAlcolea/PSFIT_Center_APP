@@ -42,8 +42,16 @@ export const api = {
   crearProducto: (data) => request('/productos', { method: 'POST', body: JSON.stringify(data) }),
   actualizarProducto: (id, data) => request(`/productos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   eliminarProducto: (id) => request(`/productos/${id}`, { method: 'DELETE' }),
+  venderProducto: (id, cantidad) => request(`/productos/${id}/vender`, { method: 'POST', body: JSON.stringify({ cantidad }) }),
+  reponerProducto: (id, cantidad, costo) => request(`/productos/${id}/reponer`, { method: 'POST', body: JSON.stringify({ cantidad, costo }) }),
 
-  getMovimientos: () => request('/movimientos'),
+  getMovimientos: (filtro = {}) => {
+    const params = new URLSearchParams();
+    if (filtro.year) params.set('year', filtro.year);
+    if (filtro.month) params.set('month', filtro.month);
+    const qs = params.toString();
+    return request(`/movimientos${qs ? `?${qs}` : ''}`);
+  },
   crearMovimiento: (data) => request('/movimientos', { method: 'POST', body: JSON.stringify(data) }),
   eliminarMovimiento: (id) => request(`/movimientos/${id}`, { method: 'DELETE' }),
 
