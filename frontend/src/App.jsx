@@ -7,11 +7,13 @@ import Usuarios from './components/Usuarios.jsx';
 import Productos from './components/Productos.jsx';
 import Contabilidad from './components/Contabilidad.jsx';
 import Personal from './components/Personal.jsx';
+import Avisos from './components/Avisos.jsx';
 
 const TITLES = {
   panel: 'Panel',
   usuarios: 'Usuarios',
   productos: 'Productos',
+  avisos: 'Avisos',
   contabilidad: 'Contabilidad',
   personal: 'Personal'
 };
@@ -50,6 +52,7 @@ export default function App() {
           {tabActiva === 'panel' && <Panel />}
           {tabActiva === 'usuarios' && <Usuarios usuario={usuario} />}
           {tabActiva === 'productos' && <Productos usuario={usuario} />}
+          {tabActiva === 'avisos' && <Avisos />}
           {tabActiva === 'contabilidad' && esAdmin && <Contabilidad />}
           {tabActiva === 'personal' && esAdmin && <Personal />}
         </main>

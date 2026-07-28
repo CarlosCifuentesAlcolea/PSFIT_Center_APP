@@ -2,6 +2,7 @@ const NAV_ITEMS = [
   { key: 'panel', label: 'Panel' },
   { key: 'usuarios', label: 'Usuarios' },
   { key: 'productos', label: 'Productos' },
+  { key: 'avisos', label: 'Avisos' },
   { key: 'contabilidad', label: 'Contabilidad', soloAdmin: true },
   { key: 'personal', label: 'Personal', soloAdmin: true }
 ];
