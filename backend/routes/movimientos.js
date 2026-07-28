@@ -48,10 +48,31 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Eliminar un movimiento
+// Eliminar un movimiento. Si venia de una venta o reposicion de producto,
+// revierte el efecto que tuvo sobre el stock (todo o nada, en una transaccion).
 router.delete('/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
   try {
-    await pool.query('DELETE FROM movimientos WHERE id = ?', [req.params.id]);
+    await pool.transaction(async (query) => {
+      const { rows } = await query('SELECT * FROM movimientos WHERE id = ?', [id]);
+      const movimiento = rows[0];
+      if (!movimiento) return; // ya no existe, nada que hacer
+
+      if (movimiento.producto_id && movimiento.cantidad) {
+        if (movimiento.tipo === 'ingreso') {
+          // era una venta: devolver las unidades al stock
+          await query('UPDATE productos SET stock = stock + ? WHERE id = ?', [movimiento.cantidad, movimiento.producto_id]);
+        } else {
+          // era una reposicion: quitar las unidades que se habian sumado, sin bajar de 0
+          await query(
+            'UPDATE productos SET stock = GREATEST(stock - ?, 0) WHERE id = ?',
+            [movimiento.cantidad, movimiento.producto_id]
+          );
+        }
+      }
+
+      await query('DELETE FROM movimientos WHERE id = ?', [id]);
+    });
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });

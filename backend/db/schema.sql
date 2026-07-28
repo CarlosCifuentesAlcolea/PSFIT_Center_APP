@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS movimientos (
   fecha DATE DEFAULT (CURRENT_DATE),
   socio_id INTEGER,
   producto_id INTEGER,
+  cantidad INTEGER,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (socio_id) REFERENCES socios(id) ON DELETE SET NULL,
   FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL

@@ -75,9 +75,9 @@ router.post('/:id/vender', async (req, res) => {
       await query('UPDATE productos SET stock = stock - ? WHERE id = ?', [cantidad, id]);
       const importe = (parseFloat(producto.precio) * cantidad).toFixed(2);
       await query(
-        `INSERT INTO movimientos (tipo, concepto, importe, producto_id)
-         VALUES ('ingreso', ?, ?, ?)`,
-        [`Venta de ${cantidad} x ${producto.nombre}`, importe, id]
+        `INSERT INTO movimientos (tipo, concepto, importe, producto_id, cantidad)
+         VALUES ('ingreso', ?, ?, ?, ?)`,
+        [`Venta de ${cantidad} x ${producto.nombre}`, importe, id, cantidad]
       );
 
       const { rows: actualizado } = await query('SELECT * FROM productos WHERE id = ?', [id]);
@@ -112,9 +112,9 @@ router.post('/:id/reponer', async (req, res) => {
 
       await query('UPDATE productos SET stock = stock + ? WHERE id = ?', [cantidad, id]);
       await query(
-        `INSERT INTO movimientos (tipo, concepto, importe, producto_id)
-         VALUES ('gasto', ?, ?, ?)`,
-        [`Reposición de ${cantidad} x ${producto.nombre}`, costo.toFixed(2), id]
+        `INSERT INTO movimientos (tipo, concepto, importe, producto_id, cantidad)
+         VALUES ('gasto', ?, ?, ?, ?)`,
+        [`Reposición de ${cantidad} x ${producto.nombre}`, costo.toFixed(2), id, cantidad]
       );
 
       const { rows: actualizado } = await query('SELECT * FROM productos WHERE id = ?', [id]);

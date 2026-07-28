@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
 
@@ -62,6 +64,46 @@ export default function Contabilidad() {
     }
   }
 
+  async function eliminarMovimiento(id) {
+    await api.eliminarMovimiento(id);
+    cargar();
+  }
+
+  function descargarPDF() {
+    const [anioMes, mesMes] = mes.split('-');
+    const nombreMes = MESES[parseInt(mesMes, 10) - 1];
+
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('PS FIT Center', 14, 18);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Extracto de ingresos y gastos — ${nombreMes} de ${anioMes}`, 14, 25);
+
+    autoTable(doc, {
+      startY: 32,
+      head: [['Fecha', 'Concepto', 'Tipo', 'Importe']],
+      body: movimientos.map((m) => [
+        new Date(m.fecha).toLocaleDateString('es-ES'),
+        m.concepto,
+        m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+        `${m.tipo === 'ingreso' ? '+' : '-'}${formatEuros(m.importe)}`
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [92, 110, 1] }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+    doc.text(`Total ingresos: ${formatEuros(ingresos)}`, 14, finalY);
+    doc.text(`Total gastos: ${formatEuros(gastos)}`, 14, finalY + 7);
+    doc.setFont(undefined, 'bold');
+    doc.text(`Balance: ${formatEuros(ingresos - gastos)}`, 14, finalY + 14);
+
+    doc.save(`extracto-${anioMes}-${mesMes}.pdf`);
+  }
+
   return (
     <div>
       <div className="grid grid-cols-2 gap-3 mb-4">
@@ -105,9 +147,20 @@ export default function Contabilidad() {
             />
           )}
         </div>
-        <button onClick={() => setModalAbierto(true)} className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg">
-          + Registrar movimiento
-        </button>
+        <div className="flex gap-2">
+          {vista === 'mes' && (
+            <button
+              onClick={descargarPDF}
+              disabled={movimientos.length === 0}
+              className="border border-neutral-200 text-neutral-600 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-50"
+            >
+              Descargar PDF
+            </button>
+          )}
+          <button onClick={() => setModalAbierto(true)} className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg">
+            + Registrar movimiento
+          </button>
+        </div>
       </div>
 
       {error && !modalAbierto && <p className="text-red-600 text-sm mb-3">{error}</p>}
@@ -119,6 +172,7 @@ export default function Contabilidad() {
               <th className="py-2 font-normal">Fecha</th>
               <th className="py-2 font-normal">Concepto</th>
               <th className="py-2 font-normal text-right">Importe</th>
+              <th className="py-2 font-normal"></th>
             </tr>
           </thead>
           <tbody>
@@ -129,10 +183,15 @@ export default function Contabilidad() {
                 <td className={`py-2.5 text-right ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
                   {m.tipo === 'ingreso' ? '+' : '−'}{formatEuros(m.importe)}
                 </td>
+                <td className="py-2.5 text-right">
+                  <button onClick={() => eliminarMovimiento(m.id)} className="text-neutral-400 hover:text-red-600 text-xs">
+                    Eliminar
+                  </button>
+                </td>
               </tr>
             ))}
             {movimientos.length === 0 && (
-              <tr><td colSpan={3} className="py-4 text-center text-neutral-400">Sin movimientos ese mes.</td></tr>
+              <tr><td colSpan={4} className="py-4 text-center text-neutral-400">Sin movimientos ese mes.</td></tr>
             )}
           </tbody>
         </table>
