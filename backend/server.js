@@ -10,8 +10,25 @@ const movimientosRoutes = require('./routes/movimientos');
 const dashboardRoutes = require('./routes/dashboard');
 const { requireAuth } = require('./middleware/auth');
 
+const origenesPermitidos = [
+  'http://localhost:5173', // Electron en desarrollo (vite dev server)
+  process.env.FRONTEND_URL || 'https://psfitcenter-web.onrender.com'
+];
+
 const app = express();
-app.use(cors());
+// Render corre la API detras de un proxy; sin esto, express-rate-limit y req.ip
+// verian siempre la IP interna del proxy en vez de la del visitante real.
+app.set('trust proxy', 1);
+app.use(cors({
+  origin: (origin, callback) => {
+    // Sin cabecera Origin (curl, apps nativas, Electron empaquetado con file://) o
+    // un origen de la lista: se conceden los headers de CORS. Cualquier otro origen
+    // de navegador: se responde sin ellos (callback(null, false), no un error) para
+    // no filtrar detalles del servidor via el manejador de errores por defecto de Express.
+    const permitido = !origin || origin === 'null' || origenesPermitidos.includes(origin);
+    callback(null, permitido);
+  }
+}));
 app.use(express.json());
 
 app.get('/', (req, res) => res.json({ status: 'ok', api: 'PS FIT Center', health: '/api/health' }));

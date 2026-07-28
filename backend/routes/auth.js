@@ -1,12 +1,22 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/pool');
 const { requireAuth } = require('../middleware/auth');
 
+// Maximo 10 intentos de login cada 15 minutos por IP, para dificultar la fuerza bruta
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de inicio de sesion. Espera unos minutos y vuelve a intentarlo.' }
+});
+
 // Iniciar sesion
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   const { nombre, password } = req.body;
   if (!nombre || !password) {
     return res.status(400).json({ error: 'nombre y password son obligatorios' });
