@@ -17,6 +17,7 @@ export default function Usuarios({ usuario }) {
   const [nuevo, setNuevo] = useState(VACIO);
   const [editandoId, setEditandoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [viendo, setViendo] = useState(null);
 
   function cargar() {
     api.getSocios().then(setSocios).catch((e) => setError(e.message));
@@ -115,6 +116,9 @@ export default function Usuarios({ usuario }) {
                     Marcar como pagado
                   </button>
                 )}
+                <button onClick={() => setViendo(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
+                  Ver
+                </button>
                 <button onClick={() => abrirModalEditar(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
                   Editar
                 </button>
@@ -212,6 +216,44 @@ export default function Usuarios({ usuario }) {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {viendo && (
+        <Modal onClose={() => setViendo(null)}>
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg">
+            <p className="text-sm font-medium">{viendo.nombre}</p>
+
+            <div className="text-sm text-neutral-600 flex flex-col gap-1.5">
+              <div className="flex justify-between"><span className="text-neutral-400">Email</span><span>{viendo.email || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-neutral-400">Teléfono</span><span>{viendo.telefono || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-neutral-400">Plan</span><span className="capitalize">{viendo.diario ? 'Visitante diario' : viendo.plan}</span></div>
+              <div className="flex justify-between">
+                <span className="text-neutral-400">Estado</span>
+                <span className={`px-2.5 py-0.5 rounded-md text-xs ${ESTADO_STYLES[viendo.estado] || ''}`}>{viendo.estado.replace('_', ' ')}</span>
+              </div>
+              {!viendo.diario && (
+                <div className="flex justify-between"><span className="text-neutral-400">Próximo pago</span><span>{viendo.proximo_pago ? new Date(viendo.proximo_pago).toLocaleDateString('es-ES') : '—'}</span></div>
+              )}
+              <div className="flex justify-between"><span className="text-neutral-400">Alta</span><span>{viendo.fecha_alta ? new Date(viendo.fecha_alta).toLocaleDateString('es-ES') : '—'}</span></div>
+            </div>
+
+            <div className="border-t border-neutral-100 pt-3">
+              <p className="text-xs font-medium text-neutral-500 mb-1.5">Rutinas asignadas</p>
+              <p className="text-sm text-neutral-400">Sin rutinas asignadas todavía.</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-neutral-500 mb-1.5">Dietas asignadas</p>
+              <p className="text-sm text-neutral-400">Sin dietas asignadas todavía.</p>
+            </div>
+
+            <div className="flex justify-end mt-1">
+              <button onClick={() => setViendo(null)} className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg">
+                Cerrar
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

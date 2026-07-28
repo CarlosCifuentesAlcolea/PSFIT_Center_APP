@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
 
-const VACIO = { nombre: '', categoria: '', precio: '', stock: '', stock_minimo: '' };
+const CATEGORIAS = ['Suplementos', 'Accesorios', 'Alimentos', 'Otros'];
+
+const VACIO = { nombre: '', marca: '', categoria: CATEGORIAS[0], precio: '', stock: '', stock_minimo: '' };
 
 function formatEuros(n) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
@@ -38,7 +40,14 @@ export default function Productos({ usuario }) {
 
   function abrirEditar(p) {
     setActivo(p);
-    setForm({ nombre: p.nombre, categoria: p.categoria || '', precio: p.precio, stock: p.stock, stock_minimo: p.stock_minimo });
+    setForm({
+      nombre: p.nombre,
+      marca: p.marca || '',
+      categoria: p.categoria || CATEGORIAS[0],
+      precio: p.precio,
+      stock: p.stock,
+      stock_minimo: p.stock_minimo
+    });
     setError('');
     setModo('editar');
   }
@@ -61,15 +70,16 @@ export default function Productos({ usuario }) {
   async function guardarProducto(e) {
     e.preventDefault();
     if (!form.nombre || !form.precio || guardando) return;
+    const stock = parseInt(form.stock || '0', 10);
+    const stockMinimo = parseInt(form.stock_minimo || '5', 10);
+    if (stock < 0 || stockMinimo < 0) {
+      setError('El stock y el stock mínimo no pueden ser negativos');
+      return;
+    }
     setGuardando(true);
     setError('');
     try {
-      const datos = {
-        ...form,
-        precio: parseFloat(form.precio),
-        stock: parseInt(form.stock || '0', 10),
-        stock_minimo: parseInt(form.stock_minimo || '5', 10)
-      };
+      const datos = { ...form, precio: parseFloat(form.precio), stock, stock_minimo: stockMinimo };
       if (modo === 'editar') {
         await api.actualizarProducto(activo.id, datos);
       } else {
@@ -138,6 +148,7 @@ export default function Productos({ usuario }) {
         <thead>
           <tr className="text-left text-neutral-400 border-b border-neutral-200">
             <th className="py-2 font-normal">Producto</th>
+            <th className="py-2 font-normal">Marca</th>
             <th className="py-2 font-normal">Categoría</th>
             <th className="py-2 font-normal">Stock</th>
             <th className="py-2 font-normal text-right">Precio</th>
@@ -148,6 +159,7 @@ export default function Productos({ usuario }) {
           {productos.map((p) => (
             <tr key={p.id} className="border-b border-neutral-100">
               <td className="py-2.5">{p.nombre}</td>
+              <td className="py-2.5 text-neutral-500">{p.marca || '—'}</td>
               <td className="py-2.5 text-neutral-500">{p.categoria || '—'}</td>
               <td className={`py-2.5 ${p.stock <= p.stock_minimo ? 'text-red-600' : ''}`}>
                 {p.stock} uds.
@@ -186,15 +198,25 @@ export default function Productos({ usuario }) {
             />
             <input
               className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder="Categoría"
+              placeholder="Marca"
+              value={form.marca}
+              onChange={(e) => setForm({ ...form, marca: e.target.value })}
+            />
+            <select
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
               value={form.categoria}
               onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-            />
+            >
+              {CATEGORIAS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
             <input
               className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
               placeholder="Precio de venta"
               type="number"
               step="0.01"
+              min="0"
               value={form.precio}
               onChange={(e) => setForm({ ...form, precio: e.target.value })}
             />
@@ -202,6 +224,7 @@ export default function Productos({ usuario }) {
               className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
               placeholder="Stock inicial"
               type="number"
+              min="0"
               value={form.stock}
               onChange={(e) => setForm({ ...form, stock: e.target.value })}
             />
@@ -209,6 +232,7 @@ export default function Productos({ usuario }) {
               className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
               placeholder="Stock mínimo (aviso)"
               type="number"
+              min="0"
               value={form.stock_minimo}
               onChange={(e) => setForm({ ...form, stock_minimo: e.target.value })}
             />

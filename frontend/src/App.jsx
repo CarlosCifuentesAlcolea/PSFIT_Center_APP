@@ -9,11 +9,14 @@ import Contabilidad from './components/Contabilidad.jsx';
 import Personal from './components/Personal.jsx';
 import Avisos from './components/Avisos.jsx';
 import CambiarPassword from './components/CambiarPassword.jsx';
+import Proximamente from './components/Proximamente.jsx';
 
 const TITLES = {
   panel: 'Panel',
   usuarios: 'Usuarios',
   productos: 'Productos',
+  rutinas: 'Rutinas',
+  dietas: 'Dietas',
   avisos: 'Avisos',
   contabilidad: 'Contabilidad',
   personal: 'Personal'
@@ -56,6 +59,18 @@ export default function App() {
           {tabActiva === 'panel' && <Panel />}
           {tabActiva === 'usuarios' && <Usuarios usuario={usuario} />}
           {tabActiva === 'productos' && <Productos usuario={usuario} />}
+          {tabActiva === 'rutinas' && (
+            <Proximamente
+              titulo="Rutinas de entrenamiento"
+              descripcion="Aquí podrás crear rutinas y asignarlas a cada socio. Todavía estamos definiendo cómo va a funcionar esta parte."
+            />
+          )}
+          {tabActiva === 'dietas' && (
+            <Proximamente
+              titulo="Planes de dieta"
+              descripcion="Aquí podrás crear dietas y asignarlas a cada socio. Todavía estamos definiendo cómo va a funcionar esta parte."
+            />
+          )}
           {tabActiva === 'avisos' && <Avisos />}
           {tabActiva === 'contabilidad' && esAdmin && <Contabilidad />}
           {tabActiva === 'personal' && esAdmin && <Personal />}
