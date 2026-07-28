@@ -8,6 +8,7 @@ import Productos from './components/Productos.jsx';
 import Contabilidad from './components/Contabilidad.jsx';
 import Personal from './components/Personal.jsx';
 import Avisos from './components/Avisos.jsx';
+import CambiarPassword from './components/CambiarPassword.jsx';
 
 const TITLES = {
   panel: 'Panel',
@@ -37,6 +38,9 @@ export default function App() {
 
   if (verificando) return null;
   if (!usuario) return <Login onLogin={setUsuario} />;
+  if (usuario.debe_cambiar_password) {
+    return <CambiarPassword usuario={usuario} onCambiada={() => setUsuario({ ...usuario, debe_cambiar_password: false })} />;
+  }
 
   const esAdmin = usuario.rol === 'admin';
   const tabActiva = TABS_SOLO_ADMIN.includes(tab) && !esAdmin ? 'panel' : tab;

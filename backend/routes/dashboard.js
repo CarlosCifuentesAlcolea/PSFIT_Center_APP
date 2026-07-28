@@ -6,7 +6,7 @@ const pool = require('../db/pool');
 router.get('/', async (req, res) => {
   try {
     const socios = await pool.query(
-      "SELECT COUNT(*) AS count FROM socios WHERE estado != 'baja'"
+      "SELECT COUNT(*) AS count FROM socios WHERE estado != 'baja' AND diario = FALSE"
     );
     const ingresos = await pool.query(
       `SELECT COALESCE(SUM(importe), 0) AS total FROM movimientos

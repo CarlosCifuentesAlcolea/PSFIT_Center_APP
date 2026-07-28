@@ -7,8 +7,10 @@ CREATE TABLE IF NOT EXISTS socios (
   telefono VARCHAR(30),
   plan VARCHAR(50) NOT NULL DEFAULT 'mensual',
   estado VARCHAR(20) NOT NULL DEFAULT 'al_dia',
+  diario BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_alta DATE DEFAULT (CURRENT_DATE),
   proximo_pago DATE,
+  aviso_vencimiento_enviado BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -44,6 +46,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   emoji VARCHAR(10) DEFAULT '🙂',
   password_hash VARCHAR(200) NOT NULL,
   rol VARCHAR(20) NOT NULL DEFAULT 'empleado' CHECK (rol IN ('admin', 'empleado')),
+  debe_cambiar_password BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

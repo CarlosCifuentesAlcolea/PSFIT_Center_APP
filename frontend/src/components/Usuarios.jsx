@@ -8,7 +8,7 @@ const ESTADO_STYLES = {
   baja: 'bg-red-100 text-red-700'
 };
 
-const VACIO = { nombre: '', email: '', telefono: '', plan: 'mensual', estado: 'al_dia', proximo_pago: '' };
+const VACIO = { nombre: '', email: '', telefono: '', plan: 'mensual', diario: false, importe: '' };
 
 export default function Usuarios({ usuario }) {
   const [socios, setSocios] = useState([]);
@@ -33,14 +33,7 @@ export default function Usuarios({ usuario }) {
 
   function abrirModalEditar(s) {
     setEditandoId(s.id);
-    setNuevo({
-      nombre: s.nombre,
-      email: s.email || '',
-      telefono: s.telefono || '',
-      plan: s.plan,
-      estado: s.estado,
-      proximo_pago: s.proximo_pago ? s.proximo_pago.slice(0, 10) : ''
-    });
+    setNuevo({ nombre: s.nombre, email: s.email || '', telefono: s.telefono || '', plan: s.plan, diario: false, importe: '' });
     setError('');
     setModalAbierto(true);
   }
@@ -48,14 +41,14 @@ export default function Usuarios({ usuario }) {
   async function guardarSocio(e) {
     e.preventDefault();
     if (!nuevo.nombre || guardando) return;
+    if (nuevo.diario && !nuevo.importe) return;
     setGuardando(true);
     setError('');
-    const datos = { ...nuevo, proximo_pago: nuevo.proximo_pago || null };
     try {
       if (editandoId) {
-        await api.actualizarSocio(editandoId, datos);
+        await api.actualizarSocio(editandoId, nuevo);
       } else {
-        await api.crearSocio(datos);
+        await api.crearSocio(nuevo);
       }
       setModalAbierto(false);
       cargar();
@@ -63,6 +56,15 @@ export default function Usuarios({ usuario }) {
       setError(e.message);
     } finally {
       setGuardando(false);
+    }
+  }
+
+  async function marcarPagado(id) {
+    try {
+      await api.pagarSocio(id);
+      cargar();
+    } catch (e) {
+      setError(e.message);
     }
   }
 
@@ -96,18 +98,23 @@ export default function Usuarios({ usuario }) {
         </thead>
         <tbody>
           {socios.map((s) => (
-            <tr key={s.id} className="border-b border-neutral-100">
-              <td className="py-2.5">{s.nombre}</td>
-              <td className="py-2.5 text-neutral-500 capitalize">{s.plan}</td>
+            <tr key={s.id} className={`border-b border-neutral-100 ${s.diario ? 'text-neutral-400' : ''}`}>
+              <td className="py-2.5">{s.nombre}{s.diario && <span className="ml-1 text-xs">(diario)</span>}</td>
+              <td className={`py-2.5 capitalize ${s.diario ? '' : 'text-neutral-500'}`}>{s.plan}</td>
               <td className="py-2.5">
-                <span className={`px-2.5 py-0.5 rounded-md text-xs ${ESTADO_STYLES[s.estado] || ''}`}>
+                <span className={`px-2.5 py-0.5 rounded-md text-xs ${s.diario ? 'bg-neutral-100 text-neutral-400' : ESTADO_STYLES[s.estado] || ''}`}>
                   {s.estado.replace('_', ' ')}
                 </span>
               </td>
-              <td className="py-2.5 text-neutral-500">
+              <td className={`py-2.5 ${s.diario ? '' : 'text-neutral-500'}`}>
                 {s.proximo_pago ? new Date(s.proximo_pago).toLocaleDateString('es-ES') : '—'}
               </td>
               <td className="py-2.5 text-right whitespace-nowrap">
+                {!s.diario && s.estado !== 'al_dia' && (
+                  <button onClick={() => marcarPagado(s.id)} className="text-neutral-400 hover:text-green-600 text-xs mr-2">
+                    Marcar como pagado
+                  </button>
+                )}
                 <button onClick={() => abrirModalEditar(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
                   Editar
                 </button>
@@ -136,45 +143,54 @@ export default function Usuarios({ usuario }) {
               value={nuevo.nombre}
               onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
             />
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder="Email"
-              value={nuevo.email}
-              onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })}
-            />
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder="Teléfono"
-              value={nuevo.telefono}
-              onChange={(e) => setNuevo({ ...nuevo, telefono: e.target.value })}
-            />
-            <select
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              value={nuevo.plan}
-              onChange={(e) => setNuevo({ ...nuevo, plan: e.target.value })}
-            >
-              <option value="mensual">Mensual</option>
-              <option value="anual">Anual</option>
-              <option value="bono">Bono</option>
-            </select>
-            {editandoId && (
+
+            {!editandoId && (
+              <label className="flex items-center gap-2 text-sm text-neutral-600">
+                <input
+                  type="checkbox"
+                  checked={nuevo.diario}
+                  onChange={(e) => setNuevo({ ...nuevo, diario: e.target.checked })}
+                />
+                Visitante diario (solo un día)
+              </label>
+            )}
+
+            {!nuevo.diario && (
               <>
-                <select
-                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-                  value={nuevo.estado}
-                  onChange={(e) => setNuevo({ ...nuevo, estado: e.target.value })}
-                >
-                  <option value="al_dia">Al día</option>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="baja">Baja</option>
-                </select>
                 <input
                   className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-                  type="date"
-                  value={nuevo.proximo_pago}
-                  onChange={(e) => setNuevo({ ...nuevo, proximo_pago: e.target.value })}
+                  placeholder="Email"
+                  value={nuevo.email}
+                  onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })}
                 />
+                <input
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  placeholder="Teléfono"
+                  value={nuevo.telefono}
+                  onChange={(e) => setNuevo({ ...nuevo, telefono: e.target.value })}
+                />
+                <select
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  value={nuevo.plan}
+                  onChange={(e) => setNuevo({ ...nuevo, plan: e.target.value })}
+                >
+                  <option value="mensual">Mensual</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="anual">Anual</option>
+                </select>
               </>
+            )}
+
+            {nuevo.diario && (
+              <input
+                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                placeholder="Importe cobrado (€)"
+                type="number"
+                step="0.01"
+                min="0"
+                value={nuevo.importe}
+                onChange={(e) => setNuevo({ ...nuevo, importe: e.target.value })}
+              />
             )}
 
             {error && <p className="text-red-600 text-sm">{error}</p>}

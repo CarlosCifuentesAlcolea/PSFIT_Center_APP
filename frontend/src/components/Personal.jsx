@@ -12,6 +12,7 @@ export default function Personal() {
   const [editandoId, setEditandoId] = useState(null);
   const [nuevo, setNuevo] = useState(VACIO);
   const [guardando, setGuardando] = useState(false);
+  const [credenciales, setCredenciales] = useState(null);
 
   function cargar() {
     api.getUsuarios().then(setPersonal).catch((e) => setError(e.message));
@@ -36,16 +37,17 @@ export default function Personal() {
   async function guardarUsuario(e) {
     e.preventDefault();
     if (!nuevo.nombre || !nuevo.telefono || guardando) return;
-    if (!editandoId && !nuevo.password) return;
     setGuardando(true);
     setError('');
     try {
       if (editandoId) {
         await api.actualizarUsuario(editandoId, nuevo);
+        setModalAbierto(false);
       } else {
-        await api.crearUsuario(nuevo);
+        const creado = await api.crearUsuario(nuevo);
+        setModalAbierto(false);
+        setCredenciales({ nombre: creado.nombre, password: creado.password_temporal });
       }
-      setModalAbierto(false);
       cargar();
     } catch (e) {
       setError(e.message);
@@ -137,13 +139,20 @@ export default function Personal() {
               value={nuevo.telefono}
               onChange={(e) => setNuevo({ ...nuevo, telefono: e.target.value })}
             />
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder={editandoId ? 'Nueva contraseña (opcional)' : 'Contraseña'}
-              type="password"
-              value={nuevo.password}
-              onChange={(e) => setNuevo({ ...nuevo, password: e.target.value })}
-            />
+            {editandoId && (
+              <input
+                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                placeholder="Nueva contraseña (opcional, deja en blanco para no cambiarla)"
+                type="password"
+                value={nuevo.password}
+                onChange={(e) => setNuevo({ ...nuevo, password: e.target.value })}
+              />
+            )}
+            {!editandoId && (
+              <p className="text-xs text-neutral-400">
+                La contraseña se genera automáticamente y se te mostrará al crear la cuenta. El empleado deberá cambiarla en su primer inicio de sesión.
+              </p>
+            )}
             <select
               className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
               value={nuevo.rol}
@@ -172,6 +181,30 @@ export default function Personal() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {credenciales && (
+        <Modal onClose={() => setCredenciales(null)}>
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg">
+            <p className="text-sm font-medium">Cuenta creada</p>
+            <p className="text-sm text-neutral-600">
+              Comparte estos datos con <strong>{credenciales.nombre}</strong> para su primer inicio de sesión (se le pedirá cambiar la contraseña):
+            </p>
+            <div className="bg-neutral-50 rounded-lg p-3 text-sm font-mono">
+              <p>Nombre: {credenciales.nombre}</p>
+              <p>Contraseña: {credenciales.password}</p>
+            </div>
+            <p className="text-xs text-neutral-400">Esta contraseña no se volverá a mostrar. Anótala ahora si la necesitas.</p>
+            <div className="flex justify-end mt-1">
+              <button
+                onClick={() => setCredenciales(null)}
+                className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

@@ -1,10 +1,20 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
 
 router.use(requireAdmin);
+
+const ALFABETO_PASSWORD = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+
+function generarPasswordTemporal(longitud = 10) {
+  const bytes = crypto.randomBytes(longitud);
+  let pass = '';
+  for (let i = 0; i < longitud; i++) pass += ALFABETO_PASSWORD[bytes[i] % ALFABETO_PASSWORD.length];
+  return pass;
+}
 
 // Listar personal (sin exponer password_hash)
 router.get('/', async (req, res) => {
@@ -18,27 +28,30 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Crear una cuenta de personal
+// Crear una cuenta de personal. La contrasena la genera el sistema (temporal);
+// el nuevo empleado tiene que cambiarla en su primer inicio de sesion.
 router.post('/', async (req, res) => {
-  const { nombre, telefono, email, password, rol, emoji } = req.body;
-  if (!nombre || !password) {
-    return res.status(400).json({ error: 'nombre y password son obligatorios' });
+  const { nombre, telefono, email, rol, emoji } = req.body;
+  if (!nombre) {
+    return res.status(400).json({ error: 'nombre es obligatorio' });
   }
   if (rol && !['admin', 'empleado'].includes(rol)) {
     return res.status(400).json({ error: "rol debe ser 'admin' o 'empleado'" });
   }
   try {
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordTemporal = generarPasswordTemporal();
+    const passwordHash = await bcrypt.hash(passwordTemporal, 10);
     const { insertId } = await pool.query(
-      `INSERT INTO usuarios (nombre, telefono, email, password_hash, rol, emoji)
-       VALUES (?, ?, ?, ?, COALESCE(?, 'empleado'), COALESCE(?, '🙂'))`,
+      `INSERT INTO usuarios (nombre, telefono, email, password_hash, rol, emoji, debe_cambiar_password)
+       VALUES (?, ?, ?, ?, COALESCE(?, 'empleado'), COALESCE(?, '🙂'), TRUE)`,
       [nombre, telefono, email, passwordHash, rol, emoji]
     );
     const { rows } = await pool.query(
       'SELECT id, nombre, email, telefono, emoji, rol, created_at FROM usuarios WHERE id = ?',
       [insertId]
     );
-    res.status(201).json(rows[0]);
+    // password_temporal solo va en esta respuesta, nunca se guarda en texto plano ni se vuelve a mostrar
+    res.status(201).json({ ...rows[0], password_temporal: passwordTemporal });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ error: 'Ya existe una cuenta con ese nombre o email' });
@@ -47,7 +60,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Actualizar una cuenta de personal (password opcional: si no se envia, no cambia)
+// Actualizar una cuenta de personal (password opcional: si el admin pone una nueva,
+// tambien queda marcada para cambiarla en el proximo login)
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, telefono, email, password, rol, emoji } = req.body;
@@ -60,7 +74,7 @@ router.put('/:id', async (req, res) => {
       const passwordHash = await bcrypt.hash(password, 10);
       const { affectedRows } = await pool.query(
         `UPDATE usuarios SET nombre = ?, telefono = ?, email = COALESCE(?, email),
-         rol = COALESCE(?, rol), emoji = COALESCE(?, emoji), password_hash = ?
+         rol = COALESCE(?, rol), emoji = COALESCE(?, emoji), password_hash = ?, debe_cambiar_password = TRUE
          WHERE id = ?`,
         [nombre, telefono, email, rol, emoji, passwordHash, id]
       );

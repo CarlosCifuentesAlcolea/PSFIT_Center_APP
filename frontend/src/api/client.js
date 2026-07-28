@@ -30,12 +30,15 @@ export const api = {
   },
   me: () => request('/auth/me').then((r) => r.usuario),
   logout: () => localStorage.removeItem(TOKEN_KEY),
+  cambiarPassword: (passwordActual, passwordNueva) =>
+    request('/auth/cambiar-password', { method: 'POST', body: JSON.stringify({ passwordActual, passwordNueva }) }),
 
   getDashboard: () => request('/dashboard'),
 
   getSocios: () => request('/socios'),
   crearSocio: (data) => request('/socios', { method: 'POST', body: JSON.stringify(data) }),
   actualizarSocio: (id, data) => request(`/socios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  pagarSocio: (id) => request(`/socios/${id}/pagar`, { method: 'POST' }),
   eliminarSocio: (id) => request(`/socios/${id}`, { method: 'DELETE' }),
 
   getProductos: () => request('/productos'),

@@ -13,9 +13,7 @@ export default function Sidebar({ active, onChange, usuario, onLogout }) {
   return (
     <nav className="w-56 bg-neutral-50 border-r border-neutral-200 flex flex-col p-3 gap-1">
       <div className="flex items-center gap-2 px-2 pb-5">
-        <div className="w-7 h-7 rounded-lg bg-brand/20 flex items-center justify-center text-brand-dark font-semibold text-sm">
-          PS
-        </div>
+        <img src="/logo.png" alt="PS FIT Center" className="w-8 h-8 rounded-lg object-cover" />
         <span className="font-medium text-neutral-800">PS FIT Center</span>
       </div>
 
