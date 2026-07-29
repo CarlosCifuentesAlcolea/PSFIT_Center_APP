@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
 
@@ -14,11 +14,23 @@ export default function Personal() {
   const [guardando, setGuardando] = useState(false);
   const [credenciales, setCredenciales] = useState(null);
 
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroRol, setFiltroRol] = useState('todos');
+
   function cargar() {
     api.getUsuarios().then(setPersonal).catch((e) => setError(e.message));
   }
 
   useEffect(cargar, []);
+
+  const personalFiltrado = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return personal.filter((p) => {
+      if (filtroRol !== 'todos' && p.rol !== filtroRol) return false;
+      if (!q) return true;
+      return [p.nombre, p.telefono, p.email].some((campo) => (campo || '').toLowerCase().includes(q));
+    });
+  }, [personal, busqueda, filtroRol]);
 
   function abrirModalCrear() {
     setEditandoId(null);
@@ -63,44 +75,66 @@ export default function Personal() {
 
   return (
     <div>
-      <div className="flex justify-end mb-4">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex gap-2 flex-1">
+          <input
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1 max-w-xs"
+            placeholder="Buscar por nombre o teléfono..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          <select
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+            value={filtroRol}
+            onChange={(e) => setFiltroRol(e.target.value)}
+          >
+            <option value="todos">Todos los roles</option>
+            <option value="empleado">Empleado</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
         <button
           onClick={abrirModalCrear}
-          className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg"
+          className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg whitespace-nowrap"
         >
           + Añadir empleado
         </button>
       </div>
 
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="text-left text-neutral-400 border-b border-neutral-200">
-            <th className="py-2 font-normal"></th>
-            <th className="py-2 font-normal">Nombre</th>
-            <th className="py-2 font-normal">Teléfono</th>
-            <th className="py-2 font-normal">Rol</th>
-            <th className="py-2 font-normal"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {personal.map((p) => (
-            <tr key={p.id} className="border-b border-neutral-100">
-              <td className="py-2.5 text-lg">{p.emoji || '🙂'}</td>
-              <td className="py-2.5">{p.nombre}</td>
-              <td className="py-2.5 text-neutral-500">{p.telefono || '—'}</td>
-              <td className="py-2.5 text-neutral-500 capitalize">{p.rol}</td>
-              <td className="py-2.5 text-right whitespace-nowrap">
-                <button onClick={() => abrirModalEditar(p)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
-                  Editar
-                </button>
-                <button onClick={() => eliminar(p.id)} className="text-neutral-400 hover:text-red-600 text-xs">
-                  Eliminar
-                </button>
-              </td>
+      <div className="max-h-[28rem] overflow-y-auto border border-neutral-100 rounded-lg">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-left text-neutral-400 border-b border-neutral-200 bg-white sticky top-0">
+              <th className="py-2 px-3 font-normal"></th>
+              <th className="py-2 font-normal">Nombre</th>
+              <th className="py-2 font-normal">Teléfono</th>
+              <th className="py-2 font-normal">Rol</th>
+              <th className="py-2 font-normal"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {personalFiltrado.map((p) => (
+              <tr key={p.id} className="border-b border-neutral-100">
+                <td className="py-2.5 px-3 text-lg">{p.emoji || '🙂'}</td>
+                <td className="py-2.5">{p.nombre}</td>
+                <td className="py-2.5 text-neutral-500">{p.telefono || '—'}</td>
+                <td className="py-2.5 text-neutral-500 capitalize">{p.rol}</td>
+                <td className="py-2.5 text-right whitespace-nowrap pr-3">
+                  <button onClick={() => abrirModalEditar(p)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
+                    Editar
+                  </button>
+                  <button onClick={() => eliminar(p.id)} className="text-neutral-400 hover:text-red-600 text-xs">
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {personalFiltrado.length === 0 && (
+              <tr><td colSpan={5} className="py-4 text-center text-neutral-400">Sin resultados.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {modalAbierto && (
         <Modal onClose={() => setModalAbierto(false)}>

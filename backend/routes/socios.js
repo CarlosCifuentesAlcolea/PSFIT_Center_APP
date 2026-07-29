@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
 // Crear un socio. Si es "diario" (visita de un dia), no lleva plan ni proximo_pago,
 // y en su lugar registra directamente el ingreso en contabilidad.
 router.post('/', async (req, res) => {
-  const { nombre, email, telefono, plan, diario, importe } = req.body;
+  const { nombre, dni, email, telefono, observaciones, plan, diario, importe } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
   if (diario) {
@@ -29,9 +29,9 @@ router.post('/', async (req, res) => {
     try {
       const resultado = await pool.transaction(async (query) => {
         const { insertId } = await query(
-          `INSERT INTO socios (nombre, email, telefono, plan, estado, diario, proximo_pago)
-           VALUES (?, ?, ?, 'diario', 'al_dia', TRUE, NULL)`,
-          [nombre, email, telefono]
+          `INSERT INTO socios (nombre, dni, email, telefono, observaciones, plan, estado, diario, proximo_pago)
+           VALUES (?, ?, ?, ?, ?, 'diario', 'al_dia', TRUE, NULL)`,
+          [nombre, dni, email, telefono, observaciones]
         );
         await query(
           `INSERT INTO movimientos (tipo, concepto, importe, socio_id) VALUES ('ingreso', ?, ?, ?)`,
@@ -50,9 +50,9 @@ router.post('/', async (req, res) => {
   try {
     const proximoPago = calcularProximoPago(planFinal);
     const { insertId } = await pool.query(
-      `INSERT INTO socios (nombre, email, telefono, plan, estado, proximo_pago)
-       VALUES (?, ?, ?, ?, 'al_dia', ?)`,
-      [nombre, email, telefono, planFinal, proximoPago]
+      `INSERT INTO socios (nombre, dni, email, telefono, observaciones, plan, estado, proximo_pago)
+       VALUES (?, ?, ?, ?, ?, ?, 'al_dia', ?)`,
+      [nombre, dni, email, telefono, observaciones, planFinal, proximoPago]
     );
     const { rows } = await pool.query('SELECT * FROM socios WHERE id = ?', [insertId]);
     res.status(201).json(rows[0]);
@@ -61,15 +61,15 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Actualizar los datos basicos de un socio (nombre, contacto, plan).
+// Actualizar los datos basicos de un socio (nombre, contacto, plan, dni, observaciones).
 // El estado y el proximo pago no se editan a mano: van por /pagar y por la revision automatica.
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, email, telefono, plan } = req.body;
+  const { nombre, dni, email, telefono, observaciones, plan } = req.body;
   try {
     const { affectedRows } = await pool.query(
-      `UPDATE socios SET nombre = ?, email = ?, telefono = ?, plan = COALESCE(?, plan) WHERE id = ?`,
-      [nombre, email, telefono, plan, id]
+      `UPDATE socios SET nombre = ?, dni = ?, email = ?, telefono = ?, observaciones = ?, plan = COALESCE(?, plan) WHERE id = ?`,
+      [nombre, dni, email, telefono, observaciones, plan, id]
     );
     if (affectedRows === 0) return res.status(404).json({ error: 'Socio no encontrado' });
     const { rows } = await pool.query('SELECT * FROM socios WHERE id = ?', [id]);

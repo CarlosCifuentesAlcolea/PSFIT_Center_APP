@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
 
@@ -8,7 +8,7 @@ const ESTADO_STYLES = {
   baja: 'bg-red-100 text-red-700'
 };
 
-const VACIO = { nombre: '', email: '', telefono: '', plan: 'mensual', diario: false, importe: '' };
+const VACIO = { nombre: '', dni: '', email: '', telefono: '', observaciones: '', plan: 'mensual', diario: false, importe: '' };
 
 export default function Usuarios({ usuario }) {
   const [socios, setSocios] = useState([]);
@@ -19,11 +19,25 @@ export default function Usuarios({ usuario }) {
   const [guardando, setGuardando] = useState(false);
   const [viendo, setViendo] = useState(null);
 
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroPlan, setFiltroPlan] = useState('todos');
+  const [filtroEstado, setFiltroEstado] = useState('todos');
+
   function cargar() {
     api.getSocios().then(setSocios).catch((e) => setError(e.message));
   }
 
   useEffect(cargar, []);
+
+  const sociosFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return socios.filter((s) => {
+      if (filtroPlan !== 'todos' && s.plan !== filtroPlan) return false;
+      if (filtroEstado !== 'todos' && s.estado !== filtroEstado) return false;
+      if (!q) return true;
+      return [s.nombre, s.dni, s.email, s.telefono].some((campo) => (campo || '').toLowerCase().includes(q));
+    });
+  }, [socios, busqueda, filtroPlan, filtroEstado]);
 
   function abrirModalCrear() {
     setEditandoId(null);
@@ -34,7 +48,16 @@ export default function Usuarios({ usuario }) {
 
   function abrirModalEditar(s) {
     setEditandoId(s.id);
-    setNuevo({ nombre: s.nombre, email: s.email || '', telefono: s.telefono || '', plan: s.plan, diario: false, importe: '' });
+    setNuevo({
+      nombre: s.nombre,
+      dni: s.dni || '',
+      email: s.email || '',
+      telefono: s.telefono || '',
+      observaciones: s.observaciones || '',
+      plan: s.plan,
+      diario: false,
+      importe: ''
+    });
     setError('');
     setModalAbierto(true);
   }
@@ -76,10 +99,39 @@ export default function Usuarios({ usuario }) {
 
   return (
     <div>
-      <div className="flex justify-end mb-4">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex gap-2 flex-1">
+          <input
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1 max-w-xs"
+            placeholder="Buscar por nombre, DNI, email o teléfono..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          <select
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+            value={filtroPlan}
+            onChange={(e) => setFiltroPlan(e.target.value)}
+          >
+            <option value="todos">Todos los planes</option>
+            <option value="mensual">Mensual</option>
+            <option value="trimestral">Trimestral</option>
+            <option value="anual">Anual</option>
+            <option value="diario">Diario</option>
+          </select>
+          <select
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="al_dia">Al día</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="baja">Baja</option>
+          </select>
+        </div>
         <button
           onClick={abrirModalCrear}
-          className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg"
+          className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg whitespace-nowrap"
         >
           + Añadir socio
         </button>
@@ -87,51 +139,56 @@ export default function Usuarios({ usuario }) {
 
       {error && !modalAbierto && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="text-left text-neutral-400 border-b border-neutral-200">
-            <th className="py-2 font-normal">Nombre</th>
-            <th className="py-2 font-normal">Plan</th>
-            <th className="py-2 font-normal">Estado</th>
-            <th className="py-2 font-normal">Próximo pago</th>
-            <th className="py-2 font-normal"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {socios.map((s) => (
-            <tr key={s.id} className={`border-b border-neutral-100 ${s.diario ? 'text-neutral-400' : ''}`}>
-              <td className="py-2.5">{s.nombre}{s.diario && <span className="ml-1 text-xs">(diario)</span>}</td>
-              <td className={`py-2.5 capitalize ${s.diario ? '' : 'text-neutral-500'}`}>{s.plan}</td>
-              <td className="py-2.5">
-                <span className={`px-2.5 py-0.5 rounded-md text-xs ${s.diario ? 'bg-neutral-100 text-neutral-400' : ESTADO_STYLES[s.estado] || ''}`}>
-                  {s.estado.replace('_', ' ')}
-                </span>
-              </td>
-              <td className={`py-2.5 ${s.diario ? '' : 'text-neutral-500'}`}>
-                {s.proximo_pago ? new Date(s.proximo_pago).toLocaleDateString('es-ES') : '—'}
-              </td>
-              <td className="py-2.5 text-right whitespace-nowrap">
-                {!s.diario && s.estado !== 'al_dia' && (
-                  <button onClick={() => marcarPagado(s.id)} className="text-neutral-400 hover:text-green-600 text-xs mr-2">
-                    Marcar como pagado
-                  </button>
-                )}
-                <button onClick={() => setViendo(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
-                  Ver
-                </button>
-                <button onClick={() => abrirModalEditar(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
-                  Editar
-                </button>
-                {usuario.rol === 'admin' && (
-                  <button onClick={() => eliminar(s.id)} className="text-neutral-400 hover:text-red-600 text-xs">
-                    Eliminar
-                  </button>
-                )}
-              </td>
+      <div className="max-h-[28rem] overflow-y-auto border border-neutral-100 rounded-lg">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-left text-neutral-400 border-b border-neutral-200 bg-white sticky top-0">
+              <th className="py-2 px-3 font-normal">Nombre</th>
+              <th className="py-2 font-normal">Plan</th>
+              <th className="py-2 font-normal">Estado</th>
+              <th className="py-2 font-normal">Próximo pago</th>
+              <th className="py-2 font-normal"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sociosFiltrados.map((s) => (
+              <tr key={s.id} className={`border-b border-neutral-100 ${s.diario ? 'text-neutral-400' : ''}`}>
+                <td className="py-2.5 px-3">{s.nombre}{!!s.diario && <span className="ml-1 text-xs">(diario)</span>}</td>
+                <td className={`py-2.5 capitalize ${s.diario ? '' : 'text-neutral-500'}`}>{s.plan}</td>
+                <td className="py-2.5">
+                  <span className={`px-2.5 py-0.5 rounded-md text-xs ${s.diario ? 'bg-neutral-100 text-neutral-400' : ESTADO_STYLES[s.estado] || ''}`}>
+                    {s.estado.replace('_', ' ')}
+                  </span>
+                </td>
+                <td className={`py-2.5 ${s.diario ? '' : 'text-neutral-500'}`}>
+                  {s.proximo_pago ? new Date(s.proximo_pago).toLocaleDateString('es-ES') : '—'}
+                </td>
+                <td className="py-2.5 text-right whitespace-nowrap pr-3">
+                  {!s.diario && s.estado !== 'al_dia' && (
+                    <button onClick={() => marcarPagado(s.id)} className="text-neutral-400 hover:text-green-600 text-xs mr-2">
+                      Marcar como pagado
+                    </button>
+                  )}
+                  <button onClick={() => setViendo(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
+                    Ver
+                  </button>
+                  <button onClick={() => abrirModalEditar(s)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
+                    Editar
+                  </button>
+                  {usuario.rol === 'admin' && (
+                    <button onClick={() => eliminar(s.id)} className="text-neutral-400 hover:text-red-600 text-xs">
+                      Eliminar
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {sociosFiltrados.length === 0 && (
+              <tr><td colSpan={5} className="py-4 text-center text-neutral-400">Sin resultados.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {modalAbierto && (
         <Modal onClose={() => setModalAbierto(false)}>
@@ -140,13 +197,6 @@ export default function Usuarios({ usuario }) {
             className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg"
           >
             <p className="text-sm font-medium mb-1">{editandoId ? 'Editar socio' : 'Añadir socio'}</p>
-
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder="Nombre del socio"
-              value={nuevo.nombre}
-              onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
-            />
 
             {!editandoId && (
               <label className="flex items-center gap-2 text-sm text-neutral-600">
@@ -159,8 +209,21 @@ export default function Usuarios({ usuario }) {
               </label>
             )}
 
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Nombre del socio"
+              value={nuevo.nombre}
+              onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
+            />
+
             {!nuevo.diario && (
               <>
+                <input
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  placeholder="DNI"
+                  value={nuevo.dni}
+                  onChange={(e) => setNuevo({ ...nuevo, dni: e.target.value })}
+                />
                 <input
                   className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
                   placeholder="Email"
@@ -182,6 +245,13 @@ export default function Usuarios({ usuario }) {
                   <option value="trimestral">Trimestral</option>
                   <option value="anual">Anual</option>
                 </select>
+                <textarea
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  placeholder="Observaciones"
+                  rows={2}
+                  value={nuevo.observaciones}
+                  onChange={(e) => setNuevo({ ...nuevo, observaciones: e.target.value })}
+                />
               </>
             )}
 
@@ -225,6 +295,7 @@ export default function Usuarios({ usuario }) {
             <p className="text-sm font-medium">{viendo.nombre}</p>
 
             <div className="text-sm text-neutral-600 flex flex-col gap-1.5">
+              <div className="flex justify-between"><span className="text-neutral-400">DNI</span><span>{viendo.dni || '—'}</span></div>
               <div className="flex justify-between"><span className="text-neutral-400">Email</span><span>{viendo.email || '—'}</span></div>
               <div className="flex justify-between"><span className="text-neutral-400">Teléfono</span><span>{viendo.telefono || '—'}</span></div>
               <div className="flex justify-between"><span className="text-neutral-400">Plan</span><span className="capitalize">{viendo.diario ? 'Visitante diario' : viendo.plan}</span></div>
@@ -236,6 +307,12 @@ export default function Usuarios({ usuario }) {
                 <div className="flex justify-between"><span className="text-neutral-400">Próximo pago</span><span>{viendo.proximo_pago ? new Date(viendo.proximo_pago).toLocaleDateString('es-ES') : '—'}</span></div>
               )}
               <div className="flex justify-between"><span className="text-neutral-400">Alta</span><span>{viendo.fecha_alta ? new Date(viendo.fecha_alta).toLocaleDateString('es-ES') : '—'}</span></div>
+              {viendo.observaciones && (
+                <div className="flex flex-col gap-0.5 pt-1">
+                  <span className="text-neutral-400">Observaciones</span>
+                  <span className="text-neutral-700">{viendo.observaciones}</span>
+                </div>
+              )}
             </div>
 
             <div className="border-t border-neutral-100 pt-3">

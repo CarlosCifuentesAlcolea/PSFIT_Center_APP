@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
 
@@ -20,11 +20,23 @@ export default function Productos({ usuario }) {
   const [cantidad, setCantidad] = useState('');
   const [costo, setCosto] = useState('');
 
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('todas');
+
   function cargar() {
     api.getProductos().then(setProductos).catch((e) => setError(e.message));
   }
 
   useEffect(cargar, []);
+
+  const productosFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return productos.filter((p) => {
+      if (filtroCategoria !== 'todas' && p.categoria !== filtroCategoria) return false;
+      if (!q) return true;
+      return [p.nombre, p.marca].some((campo) => (campo || '').toLowerCase().includes(q));
+    });
+  }, [productos, busqueda, filtroCategoria]);
 
   function cerrarModal() {
     setModo(null);
@@ -136,55 +148,78 @@ export default function Productos({ usuario }) {
 
   return (
     <div>
-      <div className="flex justify-end mb-4">
-        <button onClick={abrirCrear} className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex gap-2 flex-1">
+          <input
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1 max-w-xs"
+            placeholder="Buscar por nombre o marca..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          <select
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+            value={filtroCategoria}
+            onChange={(e) => setFiltroCategoria(e.target.value)}
+          >
+            <option value="todas">Todas las categorías</option>
+            {CATEGORIAS.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+        <button onClick={abrirCrear} className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg whitespace-nowrap">
           + Añadir producto
         </button>
       </div>
 
       {error && !modo && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="text-left text-neutral-400 border-b border-neutral-200">
-            <th className="py-2 font-normal">Producto</th>
-            <th className="py-2 font-normal">Marca</th>
-            <th className="py-2 font-normal">Categoría</th>
-            <th className="py-2 font-normal">Stock</th>
-            <th className="py-2 font-normal text-right">Precio</th>
-            <th className="py-2 font-normal"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {productos.map((p) => (
-            <tr key={p.id} className="border-b border-neutral-100">
-              <td className="py-2.5">{p.nombre}</td>
-              <td className="py-2.5 text-neutral-500">{p.marca || '—'}</td>
-              <td className="py-2.5 text-neutral-500">{p.categoria || '—'}</td>
-              <td className={`py-2.5 ${p.stock <= p.stock_minimo ? 'text-red-600' : ''}`}>
-                {p.stock} uds.
-              </td>
-              <td className="py-2.5 text-right">{formatEuros(p.precio)}</td>
-              <td className="py-2.5 text-right whitespace-nowrap">
-                <button onClick={() => abrirVender(p)} className="text-neutral-400 hover:text-green-600 text-xs mr-2">
-                  Vender
-                </button>
-                <button onClick={() => abrirReponer(p)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
-                  Reponer stock
-                </button>
-                <button onClick={() => abrirEditar(p)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
-                  Editar
-                </button>
-                {usuario.rol === 'admin' && (
-                  <button onClick={() => eliminar(p.id)} className="text-neutral-400 hover:text-red-600 text-xs">
-                    Eliminar
-                  </button>
-                )}
-              </td>
+      <div className="max-h-[28rem] overflow-y-auto border border-neutral-100 rounded-lg">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-left text-neutral-400 border-b border-neutral-200 bg-white sticky top-0">
+              <th className="py-2 px-3 font-normal">Producto</th>
+              <th className="py-2 font-normal">Marca</th>
+              <th className="py-2 font-normal">Categoría</th>
+              <th className="py-2 font-normal">Stock</th>
+              <th className="py-2 font-normal text-right">Precio</th>
+              <th className="py-2 font-normal"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {productosFiltrados.map((p) => (
+              <tr key={p.id} className="border-b border-neutral-100">
+                <td className="py-2.5 px-3">{p.nombre}</td>
+                <td className="py-2.5 text-neutral-500">{p.marca || '—'}</td>
+                <td className="py-2.5 text-neutral-500">{p.categoria || '—'}</td>
+                <td className={`py-2.5 ${p.stock <= p.stock_minimo ? 'text-red-600' : ''}`}>
+                  {p.stock} uds.
+                </td>
+                <td className="py-2.5 text-right">{formatEuros(p.precio)}</td>
+                <td className="py-2.5 text-right whitespace-nowrap pr-3">
+                  <button onClick={() => abrirVender(p)} className="text-neutral-400 hover:text-green-600 text-xs mr-2">
+                    Vender
+                  </button>
+                  <button onClick={() => abrirReponer(p)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
+                    Reponer stock
+                  </button>
+                  <button onClick={() => abrirEditar(p)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
+                    Editar
+                  </button>
+                  {usuario.rol === 'admin' && (
+                    <button onClick={() => eliminar(p.id)} className="text-neutral-400 hover:text-red-600 text-xs">
+                      Eliminar
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {productosFiltrados.length === 0 && (
+              <tr><td colSpan={6} className="py-4 text-center text-neutral-400">Sin resultados.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {(modo === 'crear' || modo === 'editar') && (
         <Modal onClose={cerrarModal}>

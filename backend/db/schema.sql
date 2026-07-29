@@ -3,8 +3,10 @@
 CREATE TABLE IF NOT EXISTS socios (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(150) NOT NULL,
+  dni VARCHAR(20),
   email VARCHAR(150),
   telefono VARCHAR(30),
+  observaciones VARCHAR(1000),
   plan VARCHAR(50) NOT NULL DEFAULT 'mensual',
   estado VARCHAR(20) NOT NULL DEFAULT 'al_dia',
   diario BOOLEAN NOT NULL DEFAULT FALSE,
