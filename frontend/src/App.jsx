@@ -10,6 +10,7 @@ import Personal from './components/Personal.jsx';
 import Avisos from './components/Avisos.jsx';
 import CambiarPassword from './components/CambiarPassword.jsx';
 import Proximamente from './components/Proximamente.jsx';
+import ResetPassword from './components/ResetPassword.jsx';
 
 const TITLES = {
   panel: 'Panel',
@@ -37,6 +38,11 @@ export default function App() {
     api.logout();
     setUsuario(null);
     setTab('panel');
+  }
+
+  if (window.location.pathname === '/reset-password') {
+    const token = new URLSearchParams(window.location.search).get('token');
+    return <ResetPassword token={token} />;
   }
 
   if (verificando) return null;

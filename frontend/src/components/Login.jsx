@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { api } from '../api/client.js';
+import OlvidePassword from './OlvidePassword.jsx';
 
 export default function Login({ onLogin }) {
   const [nombre, setNombre] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [vista, setVista] = useState('login');
 
   async function entrar(e) {
     e.preventDefault();
@@ -19,6 +21,10 @@ export default function Login({ onLogin }) {
     } finally {
       setCargando(false);
     }
+  }
+
+  if (vista === 'olvide') {
+    return <OlvidePassword onVolver={() => setVista('login')} />;
   }
 
   return (
@@ -50,6 +56,14 @@ export default function Login({ onLogin }) {
           disabled={cargando}
         >
           {cargando ? 'Entrando...' : 'Entrar'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setVista('olvide')}
+          className="text-neutral-500 text-sm hover:text-brand-dark"
+        >
+          ¿Olvidaste tu contraseña?
         </button>
       </form>
     </div>

@@ -32,6 +32,9 @@ export const api = {
   logout: () => localStorage.removeItem(TOKEN_KEY),
   cambiarPassword: (passwordActual, passwordNueva) =>
     request('/auth/cambiar-password', { method: 'POST', body: JSON.stringify({ passwordActual, passwordNueva }) }),
+  olvidePassword: (email) => request('/auth/olvide-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token, passwordNueva) =>
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, passwordNueva }) }),
 
   getDashboard: () => request('/dashboard'),
 

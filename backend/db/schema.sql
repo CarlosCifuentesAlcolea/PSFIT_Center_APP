@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password_hash VARCHAR(200) NOT NULL,
   rol VARCHAR(20) NOT NULL DEFAULT 'empleado' CHECK (rol IN ('admin', 'empleado')),
   debe_cambiar_password BOOLEAN NOT NULL DEFAULT FALSE,
+  reset_token_hash VARCHAR(64),
+  reset_token_expira DATETIME,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
