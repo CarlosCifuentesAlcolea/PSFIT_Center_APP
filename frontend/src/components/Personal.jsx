@@ -3,7 +3,7 @@ import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
 
 const EMOJIS = ['🙂', '😎', '💪', '🏋️', '🤸', '🥊', '🏃', '🧘', '⭐', '🔥', '🦸', '🐯'];
-const VACIO = { nombre: '', telefono: '', password: '', rol: 'empleado', emoji: EMOJIS[0] };
+const VACIO = { nombre: '', telefono: '', email: '', password: '', rol: 'empleado', emoji: EMOJIS[0] };
 
 export default function Personal() {
   const [personal, setPersonal] = useState([]);
@@ -41,7 +41,7 @@ export default function Personal() {
 
   function abrirModalEditar(p) {
     setEditandoId(p.id);
-    setNuevo({ nombre: p.nombre, telefono: p.telefono || '', password: '', rol: p.rol, emoji: p.emoji || EMOJIS[0] });
+    setNuevo({ nombre: p.nombre, telefono: p.telefono || '', email: p.email || '', password: '', rol: p.rol, emoji: p.emoji || EMOJIS[0] });
     setError('');
     setModalAbierto(true);
   }
@@ -108,6 +108,7 @@ export default function Personal() {
               <th className="py-2 px-3 font-normal"></th>
               <th className="py-2 font-normal">Nombre</th>
               <th className="py-2 font-normal">Teléfono</th>
+              <th className="py-2 font-normal">Correo</th>
               <th className="py-2 font-normal">Rol</th>
               <th className="py-2 font-normal"></th>
             </tr>
@@ -118,6 +119,7 @@ export default function Personal() {
                 <td className="py-2.5 px-3 text-lg">{p.emoji || '🙂'}</td>
                 <td className="py-2.5">{p.nombre}</td>
                 <td className="py-2.5 text-neutral-500">{p.telefono || '—'}</td>
+                <td className="py-2.5 text-neutral-500">{p.email || '—'}</td>
                 <td className="py-2.5 text-neutral-500 capitalize">{p.rol}</td>
                 <td className="py-2.5 text-right whitespace-nowrap pr-3">
                   <button onClick={() => abrirModalEditar(p)} className="text-neutral-400 hover:text-brand-dark text-xs mr-2">
@@ -130,7 +132,7 @@ export default function Personal() {
               </tr>
             ))}
             {personalFiltrado.length === 0 && (
-              <tr><td colSpan={5} className="py-4 text-center text-neutral-400">Sin resultados.</td></tr>
+              <tr><td colSpan={6} className="py-4 text-center text-neutral-400">Sin resultados.</td></tr>
             )}
           </tbody>
         </table>
@@ -173,6 +175,18 @@ export default function Personal() {
               value={nuevo.telefono}
               onChange={(e) => setNuevo({ ...nuevo, telefono: e.target.value })}
             />
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Correo electrónico"
+              type="email"
+              value={nuevo.email}
+              onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })}
+            />
+            {!editandoId && (
+              <p className="text-xs text-neutral-400 -mt-2">
+                Necesario para que el empleado pueda recuperar su contraseña por email.
+              </p>
+            )}
             {editandoId && (
               <input
                 className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"

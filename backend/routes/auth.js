@@ -108,10 +108,8 @@ router.post('/cambiar-password', requireAuth, async (req, res) => {
 });
 
 // Solicitar un enlace de recuperacion de contrasena.
-// Responde siempre igual, exista o no ese email, para no revelar que cuentas existen.
 router.post('/olvide-password', olvidePasswordLimiter, async (req, res) => {
   const { email } = req.body;
-  const MENSAJE_GENERICO = { mensaje: 'Si existe una cuenta con ese email, te hemos enviado un enlace para restablecer la contraseña.' };
 
   if (!email) return res.status(400).json({ error: 'El email es obligatorio' });
 
@@ -119,25 +117,27 @@ router.post('/olvide-password', olvidePasswordLimiter, async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM usuarios WHERE email = ?', [email]);
     const usuario = rows[0];
 
-    if (usuario) {
-      const token = crypto.randomBytes(32).toString('hex');
-      const expira = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
-
-      await pool.query(
-        'UPDATE usuarios SET reset_token_hash = ?, reset_token_expira = ? WHERE id = ?',
-        [hashToken(token), expira, usuario.id]
-      );
-
-      const enlace = `${FRONTEND_URL}/reset-password?token=${token}`;
-      try {
-        await enviarEmailRecuperacion(usuario.email, usuario.nombre, enlace);
-      } catch (errEmail) {
-        console.error('Error enviando email de recuperacion:', errEmail.message);
-        // No se revela al cliente si el envio de email fallo, para no filtrar si el usuario existe
-      }
+    if (!usuario) {
+      return res.status(404).json({ error: 'Ese correo no está vinculado a ninguna cuenta.' });
     }
 
-    res.json(MENSAJE_GENERICO);
+    const token = crypto.randomBytes(32).toString('hex');
+    const expira = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
+
+    await pool.query(
+      'UPDATE usuarios SET reset_token_hash = ?, reset_token_expira = ? WHERE id = ?',
+      [hashToken(token), expira, usuario.id]
+    );
+
+    const enlace = `${FRONTEND_URL}/reset-password?token=${token}`;
+    try {
+      await enviarEmailRecuperacion(usuario.email, usuario.nombre, enlace);
+    } catch (errEmail) {
+      console.error('Error enviando email de recuperacion:', errEmail.message);
+      return res.status(500).json({ error: 'No se pudo enviar el email. Intentalo de nuevo en unos minutos.' });
+    }
+
+    res.json({ mensaje: 'Te hemos enviado un enlace para restablecer la contraseña.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
