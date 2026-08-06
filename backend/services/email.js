@@ -1,11 +1,13 @@
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 // Dominio de pruebas de Resend: solo funciona sin verificar dominio propio.
 const REMITENTE = 'PS FIT Center <onboarding@resend.dev>';
 
 async function enviarEmailRecuperacion(destinatario, nombre, enlaceReset) {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY no esta configurada en el servidor');
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
     from: REMITENTE,
     to: destinatario,
