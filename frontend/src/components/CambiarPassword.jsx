@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api/client.js';
+import CampoPassword from './CampoPassword.jsx';
 
 export default function CambiarPassword({ usuario, onCambiada }) {
   const [passwordActual, setPasswordActual] = useState('');
@@ -35,26 +36,21 @@ export default function CambiarPassword({ usuario, onCambiada }) {
           Hola {usuario.nombre}, por seguridad tienes que elegir una contraseña nueva antes de continuar.
         </p>
 
-        <input
-          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+        <CampoPassword
           placeholder="Contraseña temporal actual"
-          type="password"
           value={passwordActual}
-          onChange={(e) => setPasswordActual(e.target.value)}
+          onChange={setPasswordActual}
         />
-        <input
-          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+        <CampoPassword
           placeholder="Contraseña nueva"
-          type="password"
           value={passwordNueva}
-          onChange={(e) => setPasswordNueva(e.target.value)}
+          onChange={setPasswordNueva}
+          mostrarFuerza
         />
-        <input
-          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+        <CampoPassword
           placeholder="Repite la contraseña nueva"
-          type="password"
           value={confirmar}
-          onChange={(e) => setConfirmar(e.target.value)}
+          onChange={setConfirmar}
         />
 
         {error && <p className="text-red-600 text-sm">{error}</p>}

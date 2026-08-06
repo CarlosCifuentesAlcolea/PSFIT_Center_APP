@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api/client.js';
+import CampoPassword from './CampoPassword.jsx';
 
 export default function ResetPassword({ token }) {
   const [passwordNueva, setPasswordNueva] = useState('');
@@ -43,19 +44,16 @@ export default function ResetPassword({ token }) {
           </>
         ) : (
           <form onSubmit={guardar} className="flex flex-col gap-3">
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+            <CampoPassword
               placeholder="Contraseña nueva"
-              type="password"
               value={passwordNueva}
-              onChange={(e) => setPasswordNueva(e.target.value)}
+              onChange={setPasswordNueva}
+              mostrarFuerza
             />
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+            <CampoPassword
               placeholder="Repite la contraseña nueva"
-              type="password"
               value={confirmar}
-              onChange={(e) => setConfirmar(e.target.value)}
+              onChange={setConfirmar}
             />
             {error && <p className="text-red-600 text-sm">{error}</p>}
             <button

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
+import CampoPassword from './CampoPassword.jsx';
 
 const EMOJIS = ['🙂', '😎', '💪', '🏋️', '🤸', '🥊', '🏃', '🧘', '⭐', '🔥', '🦸', '🐯'];
 const VACIO = { nombre: '', telefono: '', email: '', password: '', rol: 'empleado', emoji: EMOJIS[0] };
@@ -188,12 +189,11 @@ export default function Personal() {
               </p>
             )}
             {editandoId && (
-              <input
-                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              <CampoPassword
                 placeholder="Nueva contraseña (opcional, deja en blanco para no cambiarla)"
-                type="password"
                 value={nuevo.password}
-                onChange={(e) => setNuevo({ ...nuevo, password: e.target.value })}
+                onChange={(password) => setNuevo({ ...nuevo, password })}
+                mostrarFuerza
               />
             )}
             {!editandoId && (
