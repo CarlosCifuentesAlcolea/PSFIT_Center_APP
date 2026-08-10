@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
+import { METODOS_PAGO, etiquetaMetodoPago } from '../lib/metodoPago.js';
 
 const ESTADO_STYLES = {
   al_dia: 'bg-green-100 text-green-700',
@@ -8,7 +9,14 @@ const ESTADO_STYLES = {
   baja: 'bg-red-100 text-red-700'
 };
 
-const VACIO = { nombre: '', dni: '', email: '', telefono: '', observaciones: '', plan: 'mensual', diario: false, importe: '' };
+function formatEuros(n) {
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
+}
+
+const VACIO = {
+  nombre: '', dni: '', email: '', telefono: '', observaciones: '',
+  plan: 'mensual', diario: false, importe: '', metodo_pago: 'efectivo'
+};
 
 export default function Usuarios({ usuario }) {
   const [socios, setSocios] = useState([]);
@@ -18,6 +26,9 @@ export default function Usuarios({ usuario }) {
   const [editandoId, setEditandoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [viendo, setViendo] = useState(null);
+  const [historialPagos, setHistorialPagos] = useState([]);
+  const [pagando, setPagando] = useState(null);
+  const [datosPago, setDatosPago] = useState({ importe: '', metodo_pago: 'efectivo' });
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroPlan, setFiltroPlan] = useState('todos');
@@ -28,6 +39,14 @@ export default function Usuarios({ usuario }) {
   }
 
   useEffect(cargar, []);
+
+  useEffect(() => {
+    if (!viendo) {
+      setHistorialPagos([]);
+      return;
+    }
+    api.getMovimientos({ socio_id: viendo.id }).then(setHistorialPagos).catch(() => setHistorialPagos([]));
+  }, [viendo]);
 
   const sociosFiltrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -83,12 +102,25 @@ export default function Usuarios({ usuario }) {
     }
   }
 
-  async function marcarPagado(id) {
+  function abrirModalPago(socio) {
+    setPagando(socio);
+    setDatosPago({ importe: '', metodo_pago: 'efectivo' });
+    setError('');
+  }
+
+  async function confirmarPago(e) {
+    e.preventDefault();
+    if (!datosPago.importe || guardando) return;
+    setGuardando(true);
+    setError('');
     try {
-      await api.pagarSocio(id);
+      await api.pagarSocio(pagando.id, { importe: parseFloat(datosPago.importe), metodo_pago: datosPago.metodo_pago });
+      setPagando(null);
       cargar();
     } catch (e) {
       setError(e.message);
+    } finally {
+      setGuardando(false);
     }
   }
 
@@ -165,7 +197,7 @@ export default function Usuarios({ usuario }) {
                 </td>
                 <td className="py-2.5 text-right whitespace-nowrap pr-3">
                   {!s.diario && s.estado !== 'al_dia' && (
-                    <button onClick={() => marcarPagado(s.id)} className="text-neutral-400 hover:text-green-600 text-xs mr-2">
+                    <button onClick={() => abrirModalPago(s)} className="text-neutral-400 hover:text-green-600 text-xs mr-2">
                       Marcar como pagado
                     </button>
                   )}
@@ -256,15 +288,26 @@ export default function Usuarios({ usuario }) {
             )}
 
             {nuevo.diario && (
-              <input
-                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-                placeholder="Importe cobrado (€)"
-                type="number"
-                step="0.01"
-                min="0"
-                value={nuevo.importe}
-                onChange={(e) => setNuevo({ ...nuevo, importe: e.target.value })}
-              />
+              <>
+                <input
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  placeholder="Importe cobrado (€)"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={nuevo.importe}
+                  onChange={(e) => setNuevo({ ...nuevo, importe: e.target.value })}
+                />
+                <select
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  value={nuevo.metodo_pago}
+                  onChange={(e) => setNuevo({ ...nuevo, metodo_pago: e.target.value })}
+                >
+                  {METODOS_PAGO.map((m) => (
+                    <option key={m.valor} value={m.valor}>{m.icono} {m.etiqueta}</option>
+                  ))}
+                </select>
+              </>
             )}
 
             {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -316,6 +359,24 @@ export default function Usuarios({ usuario }) {
             </div>
 
             <div className="border-t border-neutral-100 pt-3">
+              <p className="text-xs font-medium text-neutral-500 mb-1.5">Historial de pagos</p>
+              {historialPagos.length === 0 ? (
+                <p className="text-sm text-neutral-400">Sin pagos registrados todavía.</p>
+              ) : (
+                <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
+                  {historialPagos.map((m) => (
+                    <div key={m.id} className="flex justify-between text-sm">
+                      <span className="text-neutral-500">
+                        {new Date(m.fecha).toLocaleDateString('es-ES')} · {etiquetaMetodoPago(m.metodo_pago)}
+                      </span>
+                      <span className="text-green-600">{formatEuros(m.importe)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-neutral-100 pt-3">
               <p className="text-xs font-medium text-neutral-500 mb-1.5">Rutinas asignadas</p>
               <p className="text-sm text-neutral-400">Sin rutinas asignadas todavía.</p>
             </div>
@@ -331,6 +392,42 @@ export default function Usuarios({ usuario }) {
               </button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {pagando && (
+        <Modal onClose={() => setPagando(null)}>
+          <form onSubmit={confirmarPago} className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg">
+            <p className="text-sm font-medium mb-1">Marcar como pagado — {pagando.nombre}</p>
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Importe cobrado (€)"
+              type="number"
+              step="0.01"
+              min="0"
+              value={datosPago.importe}
+              onChange={(e) => setDatosPago({ ...datosPago, importe: e.target.value })}
+              autoFocus
+            />
+            <select
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              value={datosPago.metodo_pago}
+              onChange={(e) => setDatosPago({ ...datosPago, metodo_pago: e.target.value })}
+            >
+              {METODOS_PAGO.map((m) => (
+                <option key={m.valor} value={m.valor}>{m.icono} {m.etiqueta}</option>
+              ))}
+            </select>
+            {error && <p className="text-red-600 text-sm">{error}</p>}
+            <div className="flex justify-end gap-2 mt-1">
+              <button type="button" onClick={() => setPagando(null)} className="text-neutral-500 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100">
+                Cancelar
+              </button>
+              <button className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50" type="submit" disabled={guardando}>
+                {guardando ? 'Guardando...' : 'Confirmar pago'}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>

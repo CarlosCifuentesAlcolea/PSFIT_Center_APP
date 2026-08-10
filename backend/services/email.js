@@ -8,7 +8,7 @@ async function enviarEmailRecuperacion(destinatario, nombre, enlaceReset) {
     throw new Error('RESEND_API_KEY no esta configurada en el servidor');
   }
   const resend = new Resend(process.env.RESEND_API_KEY);
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: REMITENTE,
     to: destinatario,
     subject: 'Recupera tu contraseña - PS FIT Center',
@@ -19,6 +19,11 @@ async function enviarEmailRecuperacion(destinatario, nombre, enlaceReset) {
       <p>Este enlace caduca en 30 minutos. Si no has sido tú, puedes ignorar este correo.</p>
     `
   });
+  // El SDK de Resend no lanza excepcion cuando la API rechaza el envio (ej. destinatario
+  // no permitido en modo pruebas): el error viene en el campo `error` de la respuesta.
+  if (error) {
+    throw new Error(error.message || 'Resend rechazo el envio del email');
+  }
 }
 
 module.exports = { enviarEmailRecuperacion };

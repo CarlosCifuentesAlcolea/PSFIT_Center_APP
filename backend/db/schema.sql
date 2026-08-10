@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS movimientos (
   tipo VARCHAR(10) NOT NULL CHECK (tipo IN ('ingreso', 'gasto')),
   concepto VARCHAR(200) NOT NULL,
   importe NUMERIC(10,2) NOT NULL,
+  metodo_pago VARCHAR(10) CHECK (metodo_pago IN ('efectivo', 'tarjeta')),
   fecha DATE DEFAULT (CURRENT_DATE),
   socio_id INTEGER,
   producto_id INTEGER,

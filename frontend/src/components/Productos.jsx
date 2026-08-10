@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
+import { METODOS_PAGO } from '../lib/metodoPago.js';
 
 const CATEGORIAS = ['Suplementos', 'Accesorios', 'Alimentos', 'Otros'];
 
@@ -19,6 +20,7 @@ export default function Productos({ usuario }) {
   const [form, setForm] = useState(VACIO);
   const [cantidad, setCantidad] = useState('');
   const [costo, setCosto] = useState('');
+  const [metodoPago, setMetodoPago] = useState('efectivo');
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
@@ -67,6 +69,7 @@ export default function Productos({ usuario }) {
   function abrirVender(p) {
     setActivo(p);
     setCantidad('');
+    setMetodoPago('efectivo');
     setError('');
     setModo('vender');
   }
@@ -75,6 +78,7 @@ export default function Productos({ usuario }) {
     setActivo(p);
     setCantidad('');
     setCosto('');
+    setMetodoPago('efectivo');
     setError('');
     setModo('reponer');
   }
@@ -113,7 +117,7 @@ export default function Productos({ usuario }) {
     setGuardando(true);
     setError('');
     try {
-      await api.venderProducto(activo.id, cant);
+      await api.venderProducto(activo.id, cant, metodoPago);
       cerrarModal();
       cargar();
     } catch (e) {
@@ -131,7 +135,7 @@ export default function Productos({ usuario }) {
     setGuardando(true);
     setError('');
     try {
-      await api.reponerProducto(activo.id, cant, cost);
+      await api.reponerProducto(activo.id, cant, cost, metodoPago);
       cerrarModal();
       cargar();
     } catch (e) {
@@ -299,6 +303,15 @@ export default function Productos({ usuario }) {
               onChange={(e) => setCantidad(e.target.value)}
               autoFocus
             />
+            <select
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              value={metodoPago}
+              onChange={(e) => setMetodoPago(e.target.value)}
+            >
+              {METODOS_PAGO.map((m) => (
+                <option key={m.valor} value={m.valor}>{m.icono} {m.etiqueta}</option>
+              ))}
+            </select>
             {cantidad > 0 && (
               <p className="text-xs text-neutral-500">
                 Se registrará un ingreso de {formatEuros(activo.precio * cantidad)} y se descontará del stock.
@@ -340,6 +353,15 @@ export default function Productos({ usuario }) {
               value={costo}
               onChange={(e) => setCosto(e.target.value)}
             />
+            <select
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              value={metodoPago}
+              onChange={(e) => setMetodoPago(e.target.value)}
+            >
+              {METODOS_PAGO.map((m) => (
+                <option key={m.valor} value={m.valor}>{m.icono} {m.etiqueta}</option>
+              ))}
+            </select>
             <p className="text-xs text-neutral-500">Se registrará un gasto por el coste indicado y se sumará al stock.</p>
             {error && <p className="text-red-600 text-sm">{error}</p>}
             <div className="flex justify-end gap-2 mt-1">

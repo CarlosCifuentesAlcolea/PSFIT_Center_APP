@@ -41,20 +41,23 @@ export const api = {
   getSocios: () => request('/socios'),
   crearSocio: (data) => request('/socios', { method: 'POST', body: JSON.stringify(data) }),
   actualizarSocio: (id, data) => request(`/socios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  pagarSocio: (id) => request(`/socios/${id}/pagar`, { method: 'POST' }),
+  pagarSocio: (id, data) => request(`/socios/${id}/pagar`, { method: 'POST', body: JSON.stringify(data) }),
   eliminarSocio: (id) => request(`/socios/${id}`, { method: 'DELETE' }),
 
   getProductos: () => request('/productos'),
   crearProducto: (data) => request('/productos', { method: 'POST', body: JSON.stringify(data) }),
   actualizarProducto: (id, data) => request(`/productos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   eliminarProducto: (id) => request(`/productos/${id}`, { method: 'DELETE' }),
-  venderProducto: (id, cantidad) => request(`/productos/${id}/vender`, { method: 'POST', body: JSON.stringify({ cantidad }) }),
-  reponerProducto: (id, cantidad, costo) => request(`/productos/${id}/reponer`, { method: 'POST', body: JSON.stringify({ cantidad, costo }) }),
+  venderProducto: (id, cantidad, metodo_pago) =>
+    request(`/productos/${id}/vender`, { method: 'POST', body: JSON.stringify({ cantidad, metodo_pago }) }),
+  reponerProducto: (id, cantidad, costo, metodo_pago) =>
+    request(`/productos/${id}/reponer`, { method: 'POST', body: JSON.stringify({ cantidad, costo, metodo_pago }) }),
 
   getMovimientos: (filtro = {}) => {
     const params = new URLSearchParams();
     if (filtro.year) params.set('year', filtro.year);
     if (filtro.month) params.set('month', filtro.month);
+    if (filtro.socio_id) params.set('socio_id', filtro.socio_id);
     const qs = params.toString();
     return request(`/movimientos${qs ? `?${qs}` : ''}`);
   },

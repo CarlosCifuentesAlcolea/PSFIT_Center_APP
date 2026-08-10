@@ -5,6 +5,7 @@ const { requireAdmin } = require('../middleware/auth');
 const { calcularProximoPago } = require('../lib/fechas');
 
 const PLANES_VALIDOS = ['mensual', 'trimestral', 'anual'];
+const METODOS_PAGO_VALIDOS = ['efectivo', 'tarjeta'];
 
 // Listar todos los socios
 router.get('/', async (req, res) => {
@@ -19,12 +20,15 @@ router.get('/', async (req, res) => {
 // Crear un socio. Si es "diario" (visita de un dia), no lleva plan ni proximo_pago,
 // y en su lugar registra directamente el ingreso en contabilidad.
 router.post('/', async (req, res) => {
-  const { nombre, dni, email, telefono, observaciones, plan, diario, importe } = req.body;
+  const { nombre, dni, email, telefono, observaciones, plan, diario, importe, metodo_pago } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre es obligatorio' });
 
   if (diario) {
     if (importe === undefined || importe === null || isNaN(parseFloat(importe))) {
       return res.status(400).json({ error: 'El importe es obligatorio para un visitante diario' });
+    }
+    if (!METODOS_PAGO_VALIDOS.includes(metodo_pago)) {
+      return res.status(400).json({ error: "metodo_pago debe ser 'efectivo' o 'tarjeta'" });
     }
     try {
       const resultado = await pool.transaction(async (query) => {
@@ -34,8 +38,8 @@ router.post('/', async (req, res) => {
           [nombre, dni, email, telefono, observaciones]
         );
         await query(
-          `INSERT INTO movimientos (tipo, concepto, importe, socio_id) VALUES ('ingreso', ?, ?, ?)`,
-          [`Visita diaria - ${nombre}`, parseFloat(importe).toFixed(2), insertId]
+          `INSERT INTO movimientos (tipo, concepto, importe, metodo_pago, socio_id) VALUES ('ingreso', ?, ?, ?, ?)`,
+          [`Visita diaria - ${nombre}`, parseFloat(importe).toFixed(2), metodo_pago, insertId]
         );
         const { rows } = await query('SELECT * FROM socios WHERE id = ?', [insertId]);
         return rows[0];
@@ -79,30 +83,54 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Marcar un socio como pagado: pone estado al_dia y calcula el nuevo proximo_pago
+// Marcar un socio como pagado: pone estado al_dia, calcula el nuevo proximo_pago
 // (a primeros de mes, contando desde la fecha de pago actual o desde su vencimiento
-// si todavia no habia llegado, lo que sea mas tarde).
+// si todavia no habia llegado, lo que sea mas tarde) y registra el ingreso en contabilidad.
 router.post('/:id/pagar', async (req, res) => {
   const { id } = req.params;
+  const { importe, metodo_pago } = req.body;
+  if (importe === undefined || importe === null || isNaN(parseFloat(importe))) {
+    return res.status(400).json({ error: 'El importe es obligatorio' });
+  }
+  if (!METODOS_PAGO_VALIDOS.includes(metodo_pago)) {
+    return res.status(400).json({ error: "metodo_pago debe ser 'efectivo' o 'tarjeta'" });
+  }
   try {
-    const { rows } = await pool.query('SELECT * FROM socios WHERE id = ?', [id]);
-    const socio = rows[0];
-    if (!socio) return res.status(404).json({ error: 'Socio no encontrado' });
-    if (socio.diario) return res.status(400).json({ error: 'Un visitante diario no tiene cuota que renovar' });
+    const resultado = await pool.transaction(async (query) => {
+      const { rows } = await query('SELECT * FROM socios WHERE id = ? FOR UPDATE', [id]);
+      const socio = rows[0];
+      if (!socio) {
+        const err = new Error('Socio no encontrado');
+        err.status = 404;
+        throw err;
+      }
+      if (socio.diario) {
+        const err = new Error('Un visitante diario no tiene cuota que renovar');
+        err.status = 400;
+        throw err;
+      }
 
-    const hoy = new Date();
-    const vencimientoActual = socio.proximo_pago ? new Date(socio.proximo_pago) : hoy;
-    const desde = vencimientoActual > hoy ? vencimientoActual : hoy;
-    const nuevoProximoPago = calcularProximoPago(socio.plan, desde);
+      const hoy = new Date();
+      const vencimientoActual = socio.proximo_pago ? new Date(socio.proximo_pago) : hoy;
+      const desde = vencimientoActual > hoy ? vencimientoActual : hoy;
+      const nuevoProximoPago = calcularProximoPago(socio.plan, desde);
 
-    await pool.query(
-      `UPDATE socios SET estado = 'al_dia', proximo_pago = ?, aviso_vencimiento_enviado = FALSE WHERE id = ?`,
-      [nuevoProximoPago, id]
-    );
-    const { rows: actualizado } = await pool.query('SELECT * FROM socios WHERE id = ?', [id]);
-    res.json(actualizado[0]);
+      await query(
+        `UPDATE socios SET estado = 'al_dia', proximo_pago = ?, aviso_vencimiento_enviado = FALSE WHERE id = ?`,
+        [nuevoProximoPago, id]
+      );
+      await query(
+        `INSERT INTO movimientos (tipo, concepto, importe, metodo_pago, socio_id)
+         VALUES ('ingreso', ?, ?, ?, ?)`,
+        [`Cuota ${socio.plan} - ${socio.nombre}`, parseFloat(importe).toFixed(2), metodo_pago, id]
+      );
+
+      const { rows: actualizado } = await query('SELECT * FROM socios WHERE id = ?', [id]);
+      return actualizado[0];
+    });
+    res.json(resultado);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 

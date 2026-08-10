@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
+import { METODOS_PAGO, etiquetaMetodoPago } from '../lib/metodoPago.js';
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -22,7 +24,7 @@ export default function Contabilidad() {
   const [movimientos, setMovimientos] = useState([]);
   const [error, setError] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [nuevo, setNuevo] = useState({ tipo: 'ingreso', concepto: '', importe: '' });
+  const [nuevo, setNuevo] = useState({ tipo: 'ingreso', concepto: '', importe: '', metodo_pago: 'efectivo' });
   const [guardando, setGuardando] = useState(false);
 
   const [vista, setVista] = useState('mes');
@@ -55,7 +57,7 @@ export default function Contabilidad() {
     try {
       await api.crearMovimiento({ ...nuevo, importe: parseFloat(nuevo.importe) });
       setModalAbierto(false);
-      setNuevo({ tipo: 'ingreso', concepto: '', importe: '' });
+      setNuevo({ tipo: 'ingreso', concepto: '', importe: '', metodo_pago: 'efectivo' });
       cargar();
     } catch (e) {
       setError(e.message);
@@ -82,11 +84,12 @@ export default function Contabilidad() {
 
     autoTable(doc, {
       startY: 32,
-      head: [['Fecha', 'Concepto', 'Tipo', 'Importe']],
+      head: [['Fecha', 'Concepto', 'Tipo', 'Método', 'Importe']],
       body: movimientos.map((m) => [
         new Date(m.fecha).toLocaleDateString('es-ES'),
         m.concepto,
         m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+        etiquetaMetodoPago(m.metodo_pago),
         `${m.tipo === 'ingreso' ? '+' : '-'}${formatEuros(m.importe)}`
       ]),
       styles: { fontSize: 9 },
@@ -102,6 +105,26 @@ export default function Contabilidad() {
     doc.text(`Balance: ${formatEuros(ingresos - gastos)}`, 14, finalY + 14);
 
     doc.save(`extracto-${anioMes}-${mesMes}.pdf`);
+  }
+
+  function descargarXLSX() {
+    const [anioMes, mesMes] = mes.split('-');
+
+    const filas = movimientos.map((m) => ({
+      Fecha: new Date(m.fecha).toLocaleDateString('es-ES'),
+      Concepto: m.concepto,
+      Tipo: m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+      Método: etiquetaMetodoPago(m.metodo_pago).replace(/^\S+\s/, ''),
+      Importe: Number(m.importe) * (m.tipo === 'ingreso' ? 1 : -1)
+    }));
+    filas.push({ Fecha: '', Concepto: '', Tipo: '', Método: 'Total ingresos', Importe: ingresos });
+    filas.push({ Fecha: '', Concepto: '', Tipo: '', Método: 'Total gastos', Importe: -gastos });
+    filas.push({ Fecha: '', Concepto: '', Tipo: '', Método: 'Balance', Importe: ingresos - gastos });
+
+    const hoja = XLSX.utils.json_to_sheet(filas);
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, 'Extracto');
+    XLSX.writeFile(libro, `extracto-${anioMes}-${mesMes}.xlsx`);
   }
 
   return (
@@ -149,13 +172,22 @@ export default function Contabilidad() {
         </div>
         <div className="flex gap-2">
           {vista === 'mes' && (
-            <button
-              onClick={descargarPDF}
-              disabled={movimientos.length === 0}
-              className="border border-neutral-200 text-neutral-600 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-50"
-            >
-              Descargar PDF
-            </button>
+            <>
+              <button
+                onClick={descargarPDF}
+                disabled={movimientos.length === 0}
+                className="border border-neutral-200 text-neutral-600 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-50"
+              >
+                Descargar PDF
+              </button>
+              <button
+                onClick={descargarXLSX}
+                disabled={movimientos.length === 0}
+                className="border border-neutral-200 text-neutral-600 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-50"
+              >
+                Descargar XLSX
+              </button>
+            </>
           )}
           <button onClick={() => setModalAbierto(true)} className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg">
             + Registrar movimiento
@@ -171,6 +203,7 @@ export default function Contabilidad() {
             <tr className="text-left text-neutral-400 border-b border-neutral-200">
               <th className="py-2 font-normal">Fecha</th>
               <th className="py-2 font-normal">Concepto</th>
+              <th className="py-2 font-normal">Método</th>
               <th className="py-2 font-normal text-right">Importe</th>
               <th className="py-2 font-normal"></th>
             </tr>
@@ -180,6 +213,7 @@ export default function Contabilidad() {
               <tr key={m.id} className="border-b border-neutral-100">
                 <td className="py-2.5 text-neutral-500">{new Date(m.fecha).toLocaleDateString('es-ES')}</td>
                 <td className="py-2.5">{m.concepto}</td>
+                <td className="py-2.5 text-neutral-500">{etiquetaMetodoPago(m.metodo_pago)}</td>
                 <td className={`py-2.5 text-right ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
                   {m.tipo === 'ingreso' ? '+' : '−'}{formatEuros(m.importe)}
                 </td>
@@ -191,7 +225,7 @@ export default function Contabilidad() {
               </tr>
             ))}
             {movimientos.length === 0 && (
-              <tr><td colSpan={4} className="py-4 text-center text-neutral-400">Sin movimientos ese mes.</td></tr>
+              <tr><td colSpan={5} className="py-4 text-center text-neutral-400">Sin movimientos ese mes.</td></tr>
             )}
           </tbody>
         </table>
@@ -244,6 +278,15 @@ export default function Contabilidad() {
               value={nuevo.importe}
               onChange={(e) => setNuevo({ ...nuevo, importe: e.target.value })}
             />
+            <select
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              value={nuevo.metodo_pago}
+              onChange={(e) => setNuevo({ ...nuevo, metodo_pago: e.target.value })}
+            >
+              {METODOS_PAGO.map((m) => (
+                <option key={m.valor} value={m.valor}>{m.icono} {m.etiqueta}</option>
+              ))}
+            </select>
             {error && <p className="text-red-600 text-sm">{error}</p>}
             <div className="flex justify-end gap-2 mt-1">
               <button type="button" onClick={() => setModalAbierto(false)} className="text-neutral-500 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100">

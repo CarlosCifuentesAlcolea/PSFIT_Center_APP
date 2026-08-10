@@ -4,21 +4,28 @@ const pool = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
 
 // Listar movimientos. Sin filtros: ultimos 100. Con ?year (y opcional ?month): todo ese periodo.
+// Con ?socio_id: todo el historial de ese socio, sin importar la fecha.
 router.get('/', async (req, res) => {
-  const { year, month } = req.query;
+  const { year, month, socio_id } = req.query;
   try {
     let sql = 'SELECT * FROM movimientos';
     const params = [];
+    const condiciones = [];
+    if (socio_id) {
+      condiciones.push('socio_id = ?');
+      params.push(socio_id);
+    }
     if (year) {
-      sql += ' WHERE YEAR(fecha) = ?';
+      condiciones.push('YEAR(fecha) = ?');
       params.push(year);
       if (month) {
-        sql += ' AND MONTH(fecha) = ?';
+        condiciones.push('MONTH(fecha) = ?');
         params.push(month);
       }
     }
+    if (condiciones.length) sql += ' WHERE ' + condiciones.join(' AND ');
     sql += ' ORDER BY fecha DESC, created_at DESC';
-    if (!year) sql += ' LIMIT 100';
+    if (!year && !socio_id) sql += ' LIMIT 100';
     const { rows } = await pool.query(sql, params);
     res.json(rows);
   } catch (err) {
@@ -26,20 +33,25 @@ router.get('/', async (req, res) => {
   }
 });
 
+const METODOS_PAGO_VALIDOS = ['efectivo', 'tarjeta'];
+
 // Registrar un ingreso o gasto
 router.post('/', async (req, res) => {
-  const { tipo, concepto, importe, fecha, socio_id, producto_id } = req.body;
+  const { tipo, concepto, importe, metodo_pago, fecha, socio_id, producto_id } = req.body;
   if (!tipo || !concepto || importe === undefined) {
     return res.status(400).json({ error: 'tipo, concepto e importe son obligatorios' });
   }
   if (!['ingreso', 'gasto'].includes(tipo)) {
     return res.status(400).json({ error: "tipo debe ser 'ingreso' o 'gasto'" });
   }
+  if (metodo_pago && !METODOS_PAGO_VALIDOS.includes(metodo_pago)) {
+    return res.status(400).json({ error: "metodo_pago debe ser 'efectivo' o 'tarjeta'" });
+  }
   try {
     const { insertId } = await pool.query(
-      `INSERT INTO movimientos (tipo, concepto, importe, fecha, socio_id, producto_id)
-       VALUES (?, ?, ?, COALESCE(?, CURRENT_DATE), ?, ?)`,
-      [tipo, concepto, importe, fecha, socio_id, producto_id]
+      `INSERT INTO movimientos (tipo, concepto, importe, metodo_pago, fecha, socio_id, producto_id)
+       VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_DATE), ?, ?)`,
+      [tipo, concepto, importe, metodo_pago, fecha, socio_id, producto_id]
     );
     const { rows } = await pool.query('SELECT * FROM movimientos WHERE id = ?', [insertId]);
     res.status(201).json(rows[0]);
