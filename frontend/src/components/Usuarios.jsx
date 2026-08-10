@@ -284,6 +284,30 @@ export default function Usuarios({ usuario }) {
                   value={nuevo.observaciones}
                   onChange={(e) => setNuevo({ ...nuevo, observaciones: e.target.value })}
                 />
+                {!editandoId && (
+                  <>
+                    <input
+                      className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                      placeholder="Pago inicial cobrado (€, opcional)"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={nuevo.importe}
+                      onChange={(e) => setNuevo({ ...nuevo, importe: e.target.value })}
+                    />
+                    {nuevo.importe && (
+                      <select
+                        className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                        value={nuevo.metodo_pago}
+                        onChange={(e) => setNuevo({ ...nuevo, metodo_pago: e.target.value })}
+                      >
+                        {METODOS_PAGO.map((m) => (
+                          <option key={m.valor} value={m.valor}>{m.icono} {m.etiqueta}</option>
+                        ))}
+                      </select>
+                    )}
+                  </>
+                )}
               </>
             )}
 

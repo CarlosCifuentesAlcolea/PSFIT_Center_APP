@@ -50,16 +50,35 @@ router.post('/', async (req, res) => {
     }
   }
 
+  const hayPagoInicial = importe !== undefined && importe !== null && importe !== '';
+  if (hayPagoInicial) {
+    if (isNaN(parseFloat(importe))) {
+      return res.status(400).json({ error: 'El importe del pago inicial no es valido' });
+    }
+    if (!METODOS_PAGO_VALIDOS.includes(metodo_pago)) {
+      return res.status(400).json({ error: "metodo_pago debe ser 'efectivo' o 'tarjeta'" });
+    }
+  }
+
   const planFinal = PLANES_VALIDOS.includes(plan) ? plan : 'mensual';
   try {
     const proximoPago = calcularProximoPago(planFinal);
-    const { insertId } = await pool.query(
-      `INSERT INTO socios (nombre, dni, email, telefono, observaciones, plan, estado, proximo_pago)
-       VALUES (?, ?, ?, ?, ?, ?, 'al_dia', ?)`,
-      [nombre, dni, email, telefono, observaciones, planFinal, proximoPago]
-    );
-    const { rows } = await pool.query('SELECT * FROM socios WHERE id = ?', [insertId]);
-    res.status(201).json(rows[0]);
+    const resultado = await pool.transaction(async (query) => {
+      const { insertId } = await query(
+        `INSERT INTO socios (nombre, dni, email, telefono, observaciones, plan, estado, proximo_pago)
+         VALUES (?, ?, ?, ?, ?, ?, 'al_dia', ?)`,
+        [nombre, dni, email, telefono, observaciones, planFinal, proximoPago]
+      );
+      if (hayPagoInicial) {
+        await query(
+          `INSERT INTO movimientos (tipo, concepto, importe, metodo_pago, socio_id) VALUES ('ingreso', ?, ?, ?, ?)`,
+          [`Cuota ${planFinal} - ${nombre}`, parseFloat(importe).toFixed(2), metodo_pago, insertId]
+        );
+      }
+      const { rows } = await query('SELECT * FROM socios WHERE id = ?', [insertId]);
+      return rows[0];
+    });
+    res.status(201).json(resultado);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
