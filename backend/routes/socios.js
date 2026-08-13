@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
 const { calcularProximoPago } = require('../lib/fechas');
+const { validarDni } = require('../lib/dni');
 
 const PLANES_VALIDOS = ['mensual', 'trimestral', 'anual'];
 const METODOS_PAGO_VALIDOS = ['efectivo', 'tarjeta'];
@@ -22,6 +23,9 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const { nombre, dni, email, telefono, observaciones, plan, diario, importe, metodo_pago } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre es obligatorio' });
+  if (dni && !validarDni(dni)) {
+    return res.status(400).json({ error: 'El DNI no es válido' });
+  }
 
   if (diario) {
     if (importe === undefined || importe === null || isNaN(parseFloat(importe))) {
@@ -62,12 +66,15 @@ router.post('/', async (req, res) => {
 
   const planFinal = PLANES_VALIDOS.includes(plan) ? plan : 'mensual';
   try {
-    const proximoPago = calcularProximoPago(planFinal);
+    // Sin pago inicial, el socio queda pendiente de pagar desde hoy; con pago inicial,
+    // ya está al dia y el proximo vencimiento se cuenta un periodo completo despues.
+    const estadoInicial = hayPagoInicial ? 'al_dia' : 'pendiente';
+    const proximoPago = hayPagoInicial ? calcularProximoPago(planFinal) : new Date().toISOString().slice(0, 10);
     const resultado = await pool.transaction(async (query) => {
       const { insertId } = await query(
         `INSERT INTO socios (nombre, dni, email, telefono, observaciones, plan, estado, proximo_pago)
-         VALUES (?, ?, ?, ?, ?, ?, 'al_dia', ?)`,
-        [nombre, dni, email, telefono, observaciones, planFinal, proximoPago]
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [nombre, dni, email, telefono, observaciones, planFinal, estadoInicial, proximoPago]
       );
       if (hayPagoInicial) {
         await query(
@@ -89,6 +96,9 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, dni, email, telefono, observaciones, plan } = req.body;
+  if (dni && !validarDni(dni)) {
+    return res.status(400).json({ error: 'El DNI no es válido' });
+  }
   try {
     const { affectedRows } = await pool.query(
       `UPDATE socios SET nombre = ?, dni = ?, email = ?, telefono = ?, observaciones = ?, plan = COALESCE(?, plan) WHERE id = ?`,

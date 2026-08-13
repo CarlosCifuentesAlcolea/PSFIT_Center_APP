@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
 import { METODOS_PAGO, etiquetaMetodoPago } from '../lib/metodoPago.js';
+import { validarDni } from '../lib/dni.js';
 
 const ESTADO_STYLES = {
   al_dia: 'bg-green-100 text-green-700',
@@ -85,6 +86,10 @@ export default function Usuarios({ usuario }) {
     e.preventDefault();
     if (!nuevo.nombre || guardando) return;
     if (nuevo.diario && !nuevo.importe) return;
+    if (nuevo.dni && !validarDni(nuevo.dni)) {
+      setError('El DNI no es válido');
+      return;
+    }
     setGuardando(true);
     setError('');
     try {
