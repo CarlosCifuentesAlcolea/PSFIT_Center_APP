@@ -5,6 +5,7 @@ import Login from './components/Login.jsx';
 import Panel from './components/Panel.jsx';
 import Usuarios from './components/Usuarios.jsx';
 import Productos from './components/Productos.jsx';
+import Rutinas from './components/Rutinas.jsx';
 import Contabilidad from './components/Contabilidad.jsx';
 import Personal from './components/Personal.jsx';
 import Avisos from './components/Avisos.jsx';
@@ -65,12 +66,7 @@ export default function App() {
           {tabActiva === 'panel' && <Panel />}
           {tabActiva === 'usuarios' && <Usuarios usuario={usuario} />}
           {tabActiva === 'productos' && <Productos usuario={usuario} />}
-          {tabActiva === 'rutinas' && (
-            <Proximamente
-              titulo="Rutinas de entrenamiento"
-              descripcion="Aquí podrás crear rutinas y asignarlas a cada socio. Todavía estamos definiendo cómo va a funcionar esta parte."
-            />
-          )}
+          {tabActiva === 'rutinas' && <Rutinas />}
           {tabActiva === 'dietas' && (
             <Proximamente
               titulo="Planes de dieta"

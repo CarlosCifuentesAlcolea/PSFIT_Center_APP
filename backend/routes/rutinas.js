@@ -7,15 +7,14 @@ const CAMPOS_TEXTO = [
   'patologias', 'dias_entrenamiento', 'objetivo', 'contenido'
 ];
 
-// Listar las rutinas de un socio (obligatorio pasar ?socio_id=)
+// Listar rutinas. Con ?socio_id=: solo las de ese socio. Sin filtro: todas
+// (para la vista global del apartado Rutinas).
 router.get('/', async (req, res) => {
   const { socio_id } = req.query;
-  if (!socio_id) return res.status(400).json({ error: 'socio_id es obligatorio' });
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM rutinas WHERE socio_id = ? ORDER BY created_at DESC',
-      [socio_id]
-    );
+    const { rows } = socio_id
+      ? await pool.query('SELECT * FROM rutinas WHERE socio_id = ? ORDER BY created_at DESC', [socio_id])
+      : await pool.query('SELECT * FROM rutinas ORDER BY created_at DESC');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
+import RutinaModal from './RutinaModal.jsx';
+import RutinaVista from './RutinaVista.jsx';
 import { METODOS_PAGO, etiquetaMetodoPago } from '../lib/metodoPago.js';
 import { validarDni } from '../lib/dni.js';
 
@@ -23,11 +25,6 @@ const VACIO = {
   plan: 'mensual', diario: false, importe: '', metodo_pago: 'efectivo'
 };
 
-const RUTINA_VACIA = {
-  nombre_rutina: '', edad: '', peso: '', altura: '', fecha_inicio: '', fecha_fin: '',
-  patologias: '', dias_entrenamiento: '', objetivo: '', contenido: ''
-};
-
 export default function Usuarios({ usuario }) {
   const [socios, setSocios] = useState([]);
   const [error, setError] = useState('');
@@ -40,9 +37,8 @@ export default function Usuarios({ usuario }) {
   const [pagando, setPagando] = useState(null);
   const [datosPago, setDatosPago] = useState({ importe: '', metodo_pago: 'efectivo' });
   const [rutinas, setRutinas] = useState([]);
-  const [modoRutina, setModoRutina] = useState(null); // 'crear' | 'editar'
+  const [modoRutina, setModoRutina] = useState(null); // 'crear' | 'editar' | 'ver'
   const [rutinaActiva, setRutinaActiva] = useState(null);
-  const [formRutina, setFormRutina] = useState(RUTINA_VACIA);
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroPlan, setFiltroPlan] = useState('todos');
@@ -158,51 +154,21 @@ export default function Usuarios({ usuario }) {
   function abrirCrearRutina() {
     setModoRutina('crear');
     setRutinaActiva(null);
-    setFormRutina(RUTINA_VACIA);
-    setError('');
+  }
+
+  function abrirVerRutina(r) {
+    setModoRutina('ver');
+    setRutinaActiva(r);
   }
 
   function abrirEditarRutina(r) {
     setModoRutina('editar');
     setRutinaActiva(r);
-    setFormRutina({
-      nombre_rutina: r.nombre_rutina || '',
-      edad: r.edad || '',
-      peso: r.peso || '',
-      altura: r.altura || '',
-      fecha_inicio: r.fecha_inicio || '',
-      fecha_fin: r.fecha_fin || '',
-      patologias: r.patologias || '',
-      dias_entrenamiento: r.dias_entrenamiento || '',
-      objetivo: r.objetivo || '',
-      contenido: r.contenido || ''
-    });
-    setError('');
   }
 
   function cerrarModalRutina() {
     setModoRutina(null);
     setRutinaActiva(null);
-  }
-
-  async function guardarRutina(e) {
-    e.preventDefault();
-    if (!formRutina.nombre_rutina || guardando) return;
-    setGuardando(true);
-    setError('');
-    try {
-      if (modoRutina === 'editar') {
-        await api.actualizarRutina(rutinaActiva.id, formRutina);
-      } else {
-        await api.crearRutina({ ...formRutina, socio_id: viendo.id });
-      }
-      cerrarModalRutina();
-      cargarRutinas();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setGuardando(false);
-    }
   }
 
   async function eliminarRutina(id) {
@@ -503,6 +469,9 @@ export default function Usuarios({ usuario }) {
                         {r.objetivo && <p className="text-xs text-neutral-400 truncate">{r.objetivo}</p>}
                       </div>
                       <div className="flex gap-2 whitespace-nowrap">
+                        <button onClick={() => abrirVerRutina(r)} className="text-neutral-400 hover:text-brand-dark text-xs">
+                          Ver
+                        </button>
                         <button onClick={() => abrirEditarRutina(r)} className="text-neutral-400 hover:text-brand-dark text-xs">
                           Editar
                         </button>
@@ -566,100 +535,20 @@ export default function Usuarios({ usuario }) {
         </Modal>
       )}
 
-      {modoRutina && viendo && (
-        <Modal onClose={cerrarModalRutina}>
-          <form
-            onSubmit={guardarRutina}
-            className="bg-white rounded-xl p-5 w-full max-w-lg flex flex-col gap-3 shadow-lg max-h-[85vh] overflow-y-auto"
-          >
-            <p className="text-sm font-medium mb-1">{modoRutina === 'editar' ? 'Editar rutina' : 'Nueva rutina'}</p>
+      {(modoRutina === 'crear' || modoRutina === 'editar') && viendo && (
+        <RutinaModal
+          socio={viendo}
+          rutina={modoRutina === 'editar' ? rutinaActiva : null}
+          onClose={cerrarModalRutina}
+          onGuardado={() => {
+            cerrarModalRutina();
+            cargarRutinas();
+          }}
+        />
+      )}
 
-            <div className="bg-neutral-50 rounded-lg p-3 text-sm flex flex-col gap-1">
-              <div className="flex justify-between"><span className="text-neutral-400">Nombre</span><span>{viendo.nombre}</span></div>
-              <div className="flex justify-between"><span className="text-neutral-400">Apellidos</span><span>{viendo.apellidos || '—'}</span></div>
-            </div>
-
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder="Nombre de la rutina (ej. Circuito Metabólico II)"
-              value={formRutina.nombre_rutina}
-              onChange={(e) => setFormRutina({ ...formRutina, nombre_rutina: e.target.value })}
-            />
-
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-                placeholder="Edad"
-                value={formRutina.edad}
-                onChange={(e) => setFormRutina({ ...formRutina, edad: e.target.value })}
-              />
-              <input
-                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-                placeholder="Peso"
-                value={formRutina.peso}
-                onChange={(e) => setFormRutina({ ...formRutina, peso: e.target.value })}
-              />
-              <input
-                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-                placeholder="Altura"
-                value={formRutina.altura}
-                onChange={(e) => setFormRutina({ ...formRutina, altura: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-                placeholder="Fecha de inicio"
-                value={formRutina.fecha_inicio}
-                onChange={(e) => setFormRutina({ ...formRutina, fecha_inicio: e.target.value })}
-              />
-              <input
-                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-                placeholder="Fecha de finalización"
-                value={formRutina.fecha_fin}
-                onChange={(e) => setFormRutina({ ...formRutina, fecha_fin: e.target.value })}
-              />
-            </div>
-
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder="Patologías"
-              value={formRutina.patologias}
-              onChange={(e) => setFormRutina({ ...formRutina, patologias: e.target.value })}
-            />
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder="Días de entrenamiento"
-              value={formRutina.dias_entrenamiento}
-              onChange={(e) => setFormRutina({ ...formRutina, dias_entrenamiento: e.target.value })}
-            />
-            <input
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder="Objetivo"
-              value={formRutina.objetivo}
-              onChange={(e) => setFormRutina({ ...formRutina, objetivo: e.target.value })}
-            />
-            <textarea
-              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm font-mono"
-              placeholder="Contenido de la rutina (ejercicios, series, circuitos...)"
-              rows={10}
-              value={formRutina.contenido}
-              onChange={(e) => setFormRutina({ ...formRutina, contenido: e.target.value })}
-            />
-
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-
-            <div className="flex justify-end gap-2 mt-1">
-              <button type="button" onClick={cerrarModalRutina} className="text-neutral-500 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100">
-                Cancelar
-              </button>
-              <button className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50" type="submit" disabled={guardando}>
-                {guardando ? 'Guardando...' : 'Guardar rutina'}
-              </button>
-            </div>
-          </form>
-        </Modal>
+      {modoRutina === 'ver' && viendo && rutinaActiva && (
+        <RutinaVista socio={viendo} rutina={rutinaActiva} onClose={cerrarModalRutina} />
       )}
     </div>
   );
