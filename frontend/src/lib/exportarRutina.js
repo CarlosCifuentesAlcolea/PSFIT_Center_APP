@@ -4,12 +4,15 @@ const CAMPOS = [
   ['Edad', 'edad'],
   ['Peso', 'peso'],
   ['Altura', 'altura'],
-  ['Fecha de inicio', 'fecha_inicio'],
-  ['Fecha de finalización', 'fecha_fin'],
   ['Patologías', 'patologias'],
   ['Días de entrenamiento', 'dias_entrenamiento'],
   ['Objetivo', 'objetivo']
 ];
+
+function formatFecha(valor) {
+  if (!valor) return '';
+  return new Date(`${valor}T00:00:00`).toLocaleDateString('es-ES');
+}
 
 export async function generarExcelRutina(socio, rutina) {
   const workbook = new ExcelJS.Workbook();
@@ -40,6 +43,8 @@ export async function generarExcelRutina(socio, rutina) {
   const filas = [
     ['Nombre', socio.nombre],
     ['Apellidos', socio.apellidos || ''],
+    ['Fecha de inicio', formatFecha(rutina.fecha_inicio)],
+    ['Fecha de finalización', formatFecha(rutina.fecha_fin)],
     ...CAMPOS.map(([etiqueta, campo]) => [etiqueta, rutina[campo] || ''])
   ];
 
@@ -53,19 +58,49 @@ export async function generarExcelRutina(socio, rutina) {
     fila++;
   }
 
-  fila += 1;
-  const celdaTitulo = hoja.getCell(fila, 1);
-  celdaTitulo.value = 'Contenido de la rutina';
-  celdaTitulo.font = { bold: true, size: 12 };
-  fila++;
-
-  const lineas = (rutina.contenido || '').split('\n');
-  for (const linea of lineas) {
-    hoja.mergeCells(`A${fila}:C${fila}`);
-    const celda = hoja.getCell(fila, 1);
-    celda.value = linea;
-    celda.alignment = { wrapText: true };
+  if (rutina.calentamiento) {
+    fila += 1;
+    const celdaTitulo = hoja.getCell(fila, 1);
+    celdaTitulo.value = 'Calentamiento';
+    celdaTitulo.font = { bold: true, size: 12 };
     fila++;
+
+    for (const linea of rutina.calentamiento.split('\n')) {
+      hoja.mergeCells(`A${fila}:C${fila}`);
+      const celda = hoja.getCell(fila, 1);
+      celda.value = linea;
+      celda.alignment = { wrapText: true };
+      fila++;
+    }
+  }
+
+  if (rutina.bloques && rutina.bloques.length > 0) {
+    fila += 1;
+    const celdaTitulo = hoja.getCell(fila, 1);
+    celdaTitulo.value = 'RUTINA';
+    celdaTitulo.font = { bold: true, size: 12 };
+    fila++;
+
+    for (const bloque of rutina.bloques) {
+      hoja.mergeCells(`A${fila}:C${fila}`);
+      const celdaBloque = hoja.getCell(fila, 1);
+      celdaBloque.value = bloque.nombre;
+      celdaBloque.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      celdaBloque.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5C6E01' } };
+      fila++;
+
+      if (bloque.ejercicios.length === 0) {
+        hoja.getCell(fila, 1).value = 'Sin ejercicios';
+        fila++;
+      } else {
+        for (const ej of bloque.ejercicios) {
+          hoja.getCell(fila, 1).value = ej.tipo;
+          hoja.getCell(fila, 2).value = `${ej.series} x ${ej.repeticiones}`;
+          fila++;
+        }
+      }
+      fila++;
+    }
   }
 
   const buffer = await workbook.xlsx.writeBuffer();

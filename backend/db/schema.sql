@@ -64,12 +64,13 @@ CREATE TABLE IF NOT EXISTS rutinas (
   edad VARCHAR(20),
   peso VARCHAR(20),
   altura VARCHAR(20),
-  fecha_inicio VARCHAR(30),
-  fecha_fin VARCHAR(30),
+  fecha_inicio DATE NOT NULL,
+  fecha_fin DATE,
   patologias VARCHAR(300),
   dias_entrenamiento VARCHAR(150),
   objetivo VARCHAR(300),
-  contenido TEXT,
+  calentamiento TEXT,
+  bloques TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (socio_id) REFERENCES socios(id) ON DELETE CASCADE
 );
