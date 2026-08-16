@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Modal from './Modal.jsx';
 import BloqueCard from './BloqueCard.jsx';
 import CampoNumerado from './CampoNumerado.jsx';
+import AvisoPopup from './AvisoPopup.jsx';
 import { api } from '../api/client.js';
 import { OPCIONES_CABECERA } from '../lib/rutinaOpciones.js';
 
@@ -33,6 +34,7 @@ export default function RutinaModal({ socio, rutina, onClose, onGuardado }) {
   const [bloques, setBloques] = useState(rutina?.bloques || []);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
+  const [aviso, setAviso] = useState('');
 
   const opcionesDisponibles = OPCIONES_CABECERA.filter(
     (o) => !bloques.some((b) => b.nombre === o)
@@ -62,6 +64,10 @@ export default function RutinaModal({ socio, rutina, onClose, onGuardado }) {
   async function guardar(e) {
     e.preventDefault();
     if (!form.nombre_rutina || !form.fecha_inicio || guardando) return;
+    if (!form.fecha_fin) {
+      setAviso('El campo "Fecha de finalización" está vacío. Complétalo antes de guardar la rutina.');
+      return;
+    }
     setGuardando(true);
     setError('');
     try {
@@ -73,7 +79,11 @@ export default function RutinaModal({ socio, rutina, onClose, onGuardado }) {
       }
       onGuardado();
     } catch (e) {
-      setError(e.message);
+      if (e.message.includes('finalización')) {
+        setAviso('El campo "Fecha de finalización" está vacío. Complétalo antes de guardar la rutina.');
+      } else {
+        setError(e.message);
+      }
     } finally {
       setGuardando(false);
     }
@@ -214,6 +224,8 @@ export default function RutinaModal({ socio, rutina, onClose, onGuardado }) {
           </button>
         </div>
       </form>
+
+      {aviso && <AvisoPopup mensaje={aviso} onClose={() => setAviso('')} />}
     </Modal>
   );
 }

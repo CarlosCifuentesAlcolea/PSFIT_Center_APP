@@ -51,9 +51,10 @@ router.get('/', async (req, res) => {
 // Crear una rutina para un socio. La fecha de inicio es obligatoria; el resto
 // de campos son texto libre, y bloques es la estructura dia/bloque + ejercicios.
 router.post('/', async (req, res) => {
-  const { socio_id, fecha_inicio, bloques } = req.body;
+  const { socio_id, fecha_inicio, fecha_fin, bloques } = req.body;
   if (!socio_id) return res.status(400).json({ error: 'socio_id es obligatorio' });
   if (!fecha_inicio) return res.status(400).json({ error: 'La fecha de inicio es obligatoria' });
+  if (!fecha_fin) return res.status(400).json({ error: 'La fecha de finalización es obligatoria' });
   try {
     const valores = CAMPOS_TEXTO.map((campo) => req.body[campo]);
     const { insertId } = await pool.query(
@@ -71,8 +72,9 @@ router.post('/', async (req, res) => {
 // Actualizar una rutina existente
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { fecha_inicio, bloques } = req.body;
+  const { fecha_inicio, fecha_fin, bloques } = req.body;
   if (!fecha_inicio) return res.status(400).json({ error: 'La fecha de inicio es obligatoria' });
+  if (!fecha_fin) return res.status(400).json({ error: 'La fecha de finalización es obligatoria' });
   try {
     const valores = CAMPOS_TEXTO.map((campo) => req.body[campo]);
     const { affectedRows } = await pool.query(
