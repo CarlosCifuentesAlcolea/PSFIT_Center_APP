@@ -75,6 +75,12 @@ CREATE TABLE IF NOT EXISTS rutinas (
   FOREIGN KEY (socio_id) REFERENCES socios(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS tipos_ejercicio (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX idx_movimientos_fecha ON movimientos(fecha);
 CREATE INDEX idx_socios_estado ON socios(estado);
 CREATE INDEX idx_rutinas_socio ON rutinas(socio_id);

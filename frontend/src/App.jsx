@@ -66,7 +66,7 @@ export default function App() {
           {tabActiva === 'panel' && <Panel />}
           {tabActiva === 'usuarios' && <Usuarios usuario={usuario} />}
           {tabActiva === 'productos' && <Productos usuario={usuario} />}
-          {tabActiva === 'rutinas' && <Rutinas />}
+          {tabActiva === 'rutinas' && <Rutinas usuario={usuario} />}
           {tabActiva === 'dietas' && (
             <Proximamente
               titulo="Planes de dieta"

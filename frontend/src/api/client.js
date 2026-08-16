@@ -72,5 +72,10 @@ export const api = {
   getRutinas: (socioId) => request(socioId ? `/rutinas?socio_id=${socioId}` : '/rutinas'),
   crearRutina: (data) => request('/rutinas', { method: 'POST', body: JSON.stringify(data) }),
   actualizarRutina: (id, data) => request(`/rutinas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  eliminarRutina: (id) => request(`/rutinas/${id}`, { method: 'DELETE' })
+  eliminarRutina: (id) => request(`/rutinas/${id}`, { method: 'DELETE' }),
+
+  getTiposEjercicio: () => request('/tipos-ejercicio'),
+  crearTipoEjercicio: (nombre) => request('/tipos-ejercicio', { method: 'POST', body: JSON.stringify({ nombre }) }),
+  actualizarTipoEjercicio: (id, nombre) => request(`/tipos-ejercicio/${id}`, { method: 'PUT', body: JSON.stringify({ nombre }) }),
+  eliminarTipoEjercicio: (id) => request(`/tipos-ejercicio/${id}`, { method: 'DELETE' })
 };

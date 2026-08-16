@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { TIPOS_EJERCICIO, OPCIONES_SERIES, OPCIONES_REPETICIONES } from '../lib/rutinaOpciones.js';
+import { OPCIONES_SERIES, OPCIONES_REPETICIONES } from '../lib/rutinaOpciones.js';
 
-export default function BloqueCard({ bloque, onEliminarBloque, onAgregarEjercicio, onEliminarEjercicio }) {
+export default function BloqueCard({ bloque, tiposEjercicio, onEliminarBloque, onAgregarEjercicio, onEliminarEjercicio }) {
   const [tipo, setTipo] = useState('');
   const [series, setSeries] = useState('');
   const [repeticiones, setRepeticiones] = useState('');
@@ -44,8 +44,8 @@ export default function BloqueCard({ bloque, onEliminarBloque, onAgregarEjercici
       <div className="flex gap-2 items-center flex-wrap">
         <select className="border border-neutral-200 rounded-lg px-2 py-1 text-xs" value={tipo} onChange={(e) => setTipo(e.target.value)}>
           <option value="">Tipo de ejercicio...</option>
-          {TIPOS_EJERCICIO.map((t) => (
-            <option key={t} value={t}>{t}</option>
+          {tiposEjercicio.map((t) => (
+            <option key={t.id} value={t.nombre}>{t.nombre}</option>
           ))}
         </select>
         <select className="border border-neutral-200 rounded-lg px-2 py-1 text-xs" value={series} onChange={(e) => setSeries(e.target.value)}>

@@ -2,16 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client.js';
 import RutinaModal from './RutinaModal.jsx';
 import RutinaVista from './RutinaVista.jsx';
+import GestionEjercicios from './GestionEjercicios.jsx';
 
 function nombreCompleto(s) {
   return [s.nombre, s.apellidos].filter(Boolean).join(' ');
 }
 
-export default function Rutinas() {
+export default function Rutinas({ usuario }) {
   const [socios, setSocios] = useState([]);
   const [rutinas, setRutinas] = useState([]);
   const [error, setError] = useState('');
   const [busqueda, setBusqueda] = useState('');
+  const [gestionandoEjercicios, setGestionandoEjercicios] = useState(false);
 
   const [modo, setModo] = useState(null); // 'crear' | 'editar' | 'ver'
   const [socioActivo, setSocioActivo] = useState(null);
@@ -84,6 +86,14 @@ export default function Rutinas() {
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
+        {usuario?.rol === 'admin' && (
+          <button
+            onClick={() => setGestionandoEjercicios(true)}
+            className="border border-neutral-200 text-neutral-600 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100 whitespace-nowrap"
+          >
+            Ejercicios
+          </button>
+        )}
       </div>
 
       {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
@@ -150,6 +160,8 @@ export default function Rutinas() {
       {modo === 'ver' && socioActivo && rutinaActiva && (
         <RutinaVista socio={socioActivo} rutina={rutinaActiva} onClose={cerrarModal} />
       )}
+
+      {gestionandoEjercicios && <GestionEjercicios onClose={() => setGestionandoEjercicios(false)} />}
     </div>
   );
 }

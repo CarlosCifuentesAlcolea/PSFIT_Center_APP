@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from './Modal.jsx';
 import BloqueCard from './BloqueCard.jsx';
 import CampoNumerado from './CampoNumerado.jsx';
@@ -35,6 +35,11 @@ export default function RutinaModal({ socio, rutina, onClose, onGuardado }) {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
+  const [tiposEjercicio, setTiposEjercicio] = useState([]);
+
+  useEffect(() => {
+    api.getTiposEjercicio().then(setTiposEjercicio).catch(() => setTiposEjercicio([]));
+  }, []);
 
   const opcionesDisponibles = OPCIONES_CABECERA.filter(
     (o) => !bloques.some((b) => b.nombre === o)
@@ -204,6 +209,7 @@ export default function RutinaModal({ socio, rutina, onClose, onGuardado }) {
                 <BloqueCard
                   key={b.id}
                   bloque={b}
+                  tiposEjercicio={tiposEjercicio}
                   onEliminarBloque={eliminarBloque}
                   onAgregarEjercicio={agregarEjercicio}
                   onEliminarEjercicio={eliminarEjercicio}
