@@ -31,7 +31,7 @@ export default function Panel() {
           <div className="flex flex-col gap-2">
             {data.ultimos_socios.map((s) => (
               <div key={s.id} className="flex justify-between text-sm">
-                <span>{s.nombre}</span>
+                <span>{[s.nombre, s.apellidos].filter(Boolean).join(' ')}</span>
                 <span className="text-neutral-400">{s.plan}</span>
               </div>
             ))}

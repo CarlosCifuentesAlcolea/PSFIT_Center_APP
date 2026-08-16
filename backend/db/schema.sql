@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS socios (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(150) NOT NULL,
+  apellidos VARCHAR(150),
   dni VARCHAR(20),
   email VARCHAR(150),
   telefono VARCHAR(30),
@@ -56,5 +57,23 @@ CREATE TABLE IF NOT EXISTS usuarios (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS rutinas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  socio_id BIGINT UNSIGNED NOT NULL,
+  nombre_rutina VARCHAR(150) NOT NULL DEFAULT 'Rutina de entrenamiento',
+  edad VARCHAR(20),
+  peso VARCHAR(20),
+  altura VARCHAR(20),
+  fecha_inicio VARCHAR(30),
+  fecha_fin VARCHAR(30),
+  patologias VARCHAR(300),
+  dias_entrenamiento VARCHAR(150),
+  objetivo VARCHAR(300),
+  contenido TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (socio_id) REFERENCES socios(id) ON DELETE CASCADE
+);
+
 CREATE INDEX idx_movimientos_fecha ON movimientos(fecha);
 CREATE INDEX idx_socios_estado ON socios(estado);
+CREATE INDEX idx_rutinas_socio ON rutinas(socio_id);

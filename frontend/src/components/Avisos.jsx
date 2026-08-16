@@ -80,7 +80,7 @@ export default function Avisos() {
             <tbody>
               {sinPagar.map((s) => (
                 <tr key={s.id} className="border-b border-neutral-100">
-                  <td className="py-2.5">{s.nombre}</td>
+                  <td className="py-2.5">{[s.nombre, s.apellidos].filter(Boolean).join(' ')}</td>
                   <td className="py-2.5 text-neutral-500 capitalize">{s.plan}</td>
                   <td className="py-2.5">
                     <span className={`px-2.5 py-0.5 rounded-md text-xs ${ESTADO_STYLES[s.estado] || ''}`}>

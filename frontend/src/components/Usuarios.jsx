@@ -14,9 +14,18 @@ function formatEuros(n) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
 }
 
+function nombreCompleto(s) {
+  return [s.nombre, s.apellidos].filter(Boolean).join(' ');
+}
+
 const VACIO = {
-  nombre: '', dni: '', email: '', telefono: '', observaciones: '',
+  nombre: '', apellidos: '', dni: '', email: '', telefono: '', observaciones: '',
   plan: 'mensual', diario: false, importe: '', metodo_pago: 'efectivo'
+};
+
+const RUTINA_VACIA = {
+  nombre_rutina: '', edad: '', peso: '', altura: '', fecha_inicio: '', fecha_fin: '',
+  patologias: '', dias_entrenamiento: '', objetivo: '', contenido: ''
 };
 
 export default function Usuarios({ usuario }) {
@@ -30,6 +39,10 @@ export default function Usuarios({ usuario }) {
   const [historialPagos, setHistorialPagos] = useState([]);
   const [pagando, setPagando] = useState(null);
   const [datosPago, setDatosPago] = useState({ importe: '', metodo_pago: 'efectivo' });
+  const [rutinas, setRutinas] = useState([]);
+  const [modoRutina, setModoRutina] = useState(null); // 'crear' | 'editar'
+  const [rutinaActiva, setRutinaActiva] = useState(null);
+  const [formRutina, setFormRutina] = useState(RUTINA_VACIA);
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroPlan, setFiltroPlan] = useState('todos');
@@ -41,12 +54,19 @@ export default function Usuarios({ usuario }) {
 
   useEffect(cargar, []);
 
+  function cargarRutinas() {
+    if (!viendo) return;
+    api.getRutinas(viendo.id).then(setRutinas).catch(() => setRutinas([]));
+  }
+
   useEffect(() => {
     if (!viendo) {
       setHistorialPagos([]);
+      setRutinas([]);
       return;
     }
     api.getMovimientos({ socio_id: viendo.id }).then(setHistorialPagos).catch(() => setHistorialPagos([]));
+    cargarRutinas();
   }, [viendo]);
 
   const sociosFiltrados = useMemo(() => {
@@ -55,7 +75,7 @@ export default function Usuarios({ usuario }) {
       if (filtroPlan !== 'todos' && s.plan !== filtroPlan) return false;
       if (filtroEstado !== 'todos' && s.estado !== filtroEstado) return false;
       if (!q) return true;
-      return [s.nombre, s.dni, s.email, s.telefono].some((campo) => (campo || '').toLowerCase().includes(q));
+      return [s.nombre, s.apellidos, s.dni, s.email, s.telefono].some((campo) => (campo || '').toLowerCase().includes(q));
     });
   }, [socios, busqueda, filtroPlan, filtroEstado]);
 
@@ -70,6 +90,7 @@ export default function Usuarios({ usuario }) {
     setEditandoId(s.id);
     setNuevo({
       nombre: s.nombre,
+      apellidos: s.apellidos || '',
       dni: s.dni || '',
       email: s.email || '',
       telefono: s.telefono || '',
@@ -134,6 +155,61 @@ export default function Usuarios({ usuario }) {
     cargar();
   }
 
+  function abrirCrearRutina() {
+    setModoRutina('crear');
+    setRutinaActiva(null);
+    setFormRutina(RUTINA_VACIA);
+    setError('');
+  }
+
+  function abrirEditarRutina(r) {
+    setModoRutina('editar');
+    setRutinaActiva(r);
+    setFormRutina({
+      nombre_rutina: r.nombre_rutina || '',
+      edad: r.edad || '',
+      peso: r.peso || '',
+      altura: r.altura || '',
+      fecha_inicio: r.fecha_inicio || '',
+      fecha_fin: r.fecha_fin || '',
+      patologias: r.patologias || '',
+      dias_entrenamiento: r.dias_entrenamiento || '',
+      objetivo: r.objetivo || '',
+      contenido: r.contenido || ''
+    });
+    setError('');
+  }
+
+  function cerrarModalRutina() {
+    setModoRutina(null);
+    setRutinaActiva(null);
+  }
+
+  async function guardarRutina(e) {
+    e.preventDefault();
+    if (!formRutina.nombre_rutina || guardando) return;
+    setGuardando(true);
+    setError('');
+    try {
+      if (modoRutina === 'editar') {
+        await api.actualizarRutina(rutinaActiva.id, formRutina);
+      } else {
+        await api.crearRutina({ ...formRutina, socio_id: viendo.id });
+      }
+      cerrarModalRutina();
+      cargarRutinas();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function eliminarRutina(id) {
+    await api.eliminarRutina(id);
+    cargarRutinas();
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-4">
@@ -190,7 +266,7 @@ export default function Usuarios({ usuario }) {
           <tbody>
             {sociosFiltrados.map((s) => (
               <tr key={s.id} className={`border-b border-neutral-100 ${s.diario ? 'text-neutral-400' : ''}`}>
-                <td className="py-2.5 px-3">{s.nombre}{!!s.diario && <span className="ml-1 text-xs">(diario)</span>}</td>
+                <td className="py-2.5 px-3">{nombreCompleto(s)}{!!s.diario && <span className="ml-1 text-xs">(diario)</span>}</td>
                 <td className={`py-2.5 capitalize ${s.diario ? '' : 'text-neutral-500'}`}>{s.plan}</td>
                 <td className="py-2.5">
                   <span className={`px-2.5 py-0.5 rounded-md text-xs ${s.diario ? 'bg-neutral-100 text-neutral-400' : ESTADO_STYLES[s.estado] || ''}`}>
@@ -255,6 +331,12 @@ export default function Usuarios({ usuario }) {
 
             {!nuevo.diario && (
               <>
+                <input
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  placeholder="Apellidos"
+                  value={nuevo.apellidos}
+                  onChange={(e) => setNuevo({ ...nuevo, apellidos: e.target.value })}
+                />
                 <input
                   className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
                   placeholder="DNI"
@@ -362,7 +444,7 @@ export default function Usuarios({ usuario }) {
       {viendo && (
         <Modal onClose={() => setViendo(null)}>
           <div className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg">
-            <p className="text-sm font-medium">{viendo.nombre}</p>
+            <p className="text-sm font-medium">{nombreCompleto(viendo)}</p>
 
             <div className="text-sm text-neutral-600 flex flex-col gap-1.5">
               <div className="flex justify-between"><span className="text-neutral-400">DNI</span><span>{viendo.dni || '—'}</span></div>
@@ -404,8 +486,34 @@ export default function Usuarios({ usuario }) {
             </div>
 
             <div className="border-t border-neutral-100 pt-3">
-              <p className="text-xs font-medium text-neutral-500 mb-1.5">Rutinas asignadas</p>
-              <p className="text-sm text-neutral-400">Sin rutinas asignadas todavía.</p>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-medium text-neutral-500">Rutinas asignadas</p>
+                <button onClick={abrirCrearRutina} className="text-xs text-brand-dark hover:underline">
+                  + Nueva rutina
+                </button>
+              </div>
+              {rutinas.length === 0 ? (
+                <p className="text-sm text-neutral-400">Sin rutinas asignadas todavía.</p>
+              ) : (
+                <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+                  {rutinas.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between text-sm gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate">{r.nombre_rutina}</p>
+                        {r.objetivo && <p className="text-xs text-neutral-400 truncate">{r.objetivo}</p>}
+                      </div>
+                      <div className="flex gap-2 whitespace-nowrap">
+                        <button onClick={() => abrirEditarRutina(r)} className="text-neutral-400 hover:text-brand-dark text-xs">
+                          Editar
+                        </button>
+                        <button onClick={() => eliminarRutina(r.id)} className="text-neutral-400 hover:text-red-600 text-xs">
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
@@ -425,7 +533,7 @@ export default function Usuarios({ usuario }) {
       {pagando && (
         <Modal onClose={() => setPagando(null)}>
           <form onSubmit={confirmarPago} className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg">
-            <p className="text-sm font-medium mb-1">Marcar como pagado — {pagando.nombre}</p>
+            <p className="text-sm font-medium mb-1">Marcar como pagado — {nombreCompleto(pagando)}</p>
             <input
               className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
               placeholder="Importe cobrado (€)"
@@ -452,6 +560,102 @@ export default function Usuarios({ usuario }) {
               </button>
               <button className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50" type="submit" disabled={guardando}>
                 {guardando ? 'Guardando...' : 'Confirmar pago'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {modoRutina && viendo && (
+        <Modal onClose={cerrarModalRutina}>
+          <form
+            onSubmit={guardarRutina}
+            className="bg-white rounded-xl p-5 w-full max-w-lg flex flex-col gap-3 shadow-lg max-h-[85vh] overflow-y-auto"
+          >
+            <p className="text-sm font-medium mb-1">{modoRutina === 'editar' ? 'Editar rutina' : 'Nueva rutina'}</p>
+
+            <div className="bg-neutral-50 rounded-lg p-3 text-sm flex flex-col gap-1">
+              <div className="flex justify-between"><span className="text-neutral-400">Nombre</span><span>{viendo.nombre}</span></div>
+              <div className="flex justify-between"><span className="text-neutral-400">Apellidos</span><span>{viendo.apellidos || '—'}</span></div>
+            </div>
+
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Nombre de la rutina (ej. Circuito Metabólico II)"
+              value={formRutina.nombre_rutina}
+              onChange={(e) => setFormRutina({ ...formRutina, nombre_rutina: e.target.value })}
+            />
+
+            <div className="grid grid-cols-3 gap-2">
+              <input
+                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                placeholder="Edad"
+                value={formRutina.edad}
+                onChange={(e) => setFormRutina({ ...formRutina, edad: e.target.value })}
+              />
+              <input
+                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                placeholder="Peso"
+                value={formRutina.peso}
+                onChange={(e) => setFormRutina({ ...formRutina, peso: e.target.value })}
+              />
+              <input
+                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                placeholder="Altura"
+                value={formRutina.altura}
+                onChange={(e) => setFormRutina({ ...formRutina, altura: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                placeholder="Fecha de inicio"
+                value={formRutina.fecha_inicio}
+                onChange={(e) => setFormRutina({ ...formRutina, fecha_inicio: e.target.value })}
+              />
+              <input
+                className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                placeholder="Fecha de finalización"
+                value={formRutina.fecha_fin}
+                onChange={(e) => setFormRutina({ ...formRutina, fecha_fin: e.target.value })}
+              />
+            </div>
+
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Patologías"
+              value={formRutina.patologias}
+              onChange={(e) => setFormRutina({ ...formRutina, patologias: e.target.value })}
+            />
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Días de entrenamiento"
+              value={formRutina.dias_entrenamiento}
+              onChange={(e) => setFormRutina({ ...formRutina, dias_entrenamiento: e.target.value })}
+            />
+            <input
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="Objetivo"
+              value={formRutina.objetivo}
+              onChange={(e) => setFormRutina({ ...formRutina, objetivo: e.target.value })}
+            />
+            <textarea
+              className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm font-mono"
+              placeholder="Contenido de la rutina (ejercicios, series, circuitos...)"
+              rows={10}
+              value={formRutina.contenido}
+              onChange={(e) => setFormRutina({ ...formRutina, contenido: e.target.value })}
+            />
+
+            {error && <p className="text-red-600 text-sm">{error}</p>}
+
+            <div className="flex justify-end gap-2 mt-1">
+              <button type="button" onClick={cerrarModalRutina} className="text-neutral-500 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100">
+                Cancelar
+              </button>
+              <button className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50" type="submit" disabled={guardando}>
+                {guardando ? 'Guardando...' : 'Guardar rutina'}
               </button>
             </div>
           </form>

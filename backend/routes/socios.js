@@ -8,6 +8,10 @@ const { validarDni } = require('../lib/dni');
 const PLANES_VALIDOS = ['mensual', 'trimestral', 'anual'];
 const METODOS_PAGO_VALIDOS = ['efectivo', 'tarjeta'];
 
+function nombreCompleto(nombre, apellidos) {
+  return [nombre, apellidos].filter(Boolean).join(' ');
+}
+
 // Listar todos los socios
 router.get('/', async (req, res) => {
   try {
@@ -21,7 +25,7 @@ router.get('/', async (req, res) => {
 // Crear un socio. Si es "diario" (visita de un dia), no lleva plan ni proximo_pago,
 // y en su lugar registra directamente el ingreso en contabilidad.
 router.post('/', async (req, res) => {
-  const { nombre, dni, email, telefono, observaciones, plan, diario, importe, metodo_pago } = req.body;
+  const { nombre, apellidos, dni, email, telefono, observaciones, plan, diario, importe, metodo_pago } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre es obligatorio' });
   if (dni && !validarDni(dni)) {
     return res.status(400).json({ error: 'El DNI no es válido' });
@@ -37,13 +41,13 @@ router.post('/', async (req, res) => {
     try {
       const resultado = await pool.transaction(async (query) => {
         const { insertId } = await query(
-          `INSERT INTO socios (nombre, dni, email, telefono, observaciones, plan, estado, diario, proximo_pago)
-           VALUES (?, ?, ?, ?, ?, 'diario', 'al_dia', TRUE, NULL)`,
-          [nombre, dni, email, telefono, observaciones]
+          `INSERT INTO socios (nombre, apellidos, dni, email, telefono, observaciones, plan, estado, diario, proximo_pago)
+           VALUES (?, ?, ?, ?, ?, ?, 'diario', 'al_dia', TRUE, NULL)`,
+          [nombre, apellidos, dni, email, telefono, observaciones]
         );
         await query(
           `INSERT INTO movimientos (tipo, concepto, importe, metodo_pago, socio_id) VALUES ('ingreso', ?, ?, ?, ?)`,
-          [`Visita diaria - ${nombre}`, parseFloat(importe).toFixed(2), metodo_pago, insertId]
+          [`Visita diaria - ${nombreCompleto(nombre, apellidos)}`, parseFloat(importe).toFixed(2), metodo_pago, insertId]
         );
         const { rows } = await query('SELECT * FROM socios WHERE id = ?', [insertId]);
         return rows[0];
@@ -72,14 +76,14 @@ router.post('/', async (req, res) => {
     const proximoPago = hayPagoInicial ? calcularProximoPago(planFinal) : new Date().toISOString().slice(0, 10);
     const resultado = await pool.transaction(async (query) => {
       const { insertId } = await query(
-        `INSERT INTO socios (nombre, dni, email, telefono, observaciones, plan, estado, proximo_pago)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [nombre, dni, email, telefono, observaciones, planFinal, estadoInicial, proximoPago]
+        `INSERT INTO socios (nombre, apellidos, dni, email, telefono, observaciones, plan, estado, proximo_pago)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [nombre, apellidos, dni, email, telefono, observaciones, planFinal, estadoInicial, proximoPago]
       );
       if (hayPagoInicial) {
         await query(
           `INSERT INTO movimientos (tipo, concepto, importe, metodo_pago, socio_id) VALUES ('ingreso', ?, ?, ?, ?)`,
-          [`Cuota ${planFinal} - ${nombre}`, parseFloat(importe).toFixed(2), metodo_pago, insertId]
+          [`Cuota ${planFinal} - ${nombreCompleto(nombre, apellidos)}`, parseFloat(importe).toFixed(2), metodo_pago, insertId]
         );
       }
       const { rows } = await query('SELECT * FROM socios WHERE id = ?', [insertId]);
@@ -95,14 +99,14 @@ router.post('/', async (req, res) => {
 // El estado y el proximo pago no se editan a mano: van por /pagar y por la revision automatica.
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, dni, email, telefono, observaciones, plan } = req.body;
+  const { nombre, apellidos, dni, email, telefono, observaciones, plan } = req.body;
   if (dni && !validarDni(dni)) {
     return res.status(400).json({ error: 'El DNI no es válido' });
   }
   try {
     const { affectedRows } = await pool.query(
-      `UPDATE socios SET nombre = ?, dni = ?, email = ?, telefono = ?, observaciones = ?, plan = COALESCE(?, plan) WHERE id = ?`,
-      [nombre, dni, email, telefono, observaciones, plan, id]
+      `UPDATE socios SET nombre = ?, apellidos = ?, dni = ?, email = ?, telefono = ?, observaciones = ?, plan = COALESCE(?, plan) WHERE id = ?`,
+      [nombre, apellidos, dni, email, telefono, observaciones, plan, id]
     );
     if (affectedRows === 0) return res.status(404).json({ error: 'Socio no encontrado' });
     const { rows } = await pool.query('SELECT * FROM socios WHERE id = ?', [id]);
@@ -151,7 +155,7 @@ router.post('/:id/pagar', async (req, res) => {
       await query(
         `INSERT INTO movimientos (tipo, concepto, importe, metodo_pago, socio_id)
          VALUES ('ingreso', ?, ?, ?, ?)`,
-        [`Cuota ${socio.plan} - ${socio.nombre}`, parseFloat(importe).toFixed(2), metodo_pago, id]
+        [`Cuota ${socio.plan} - ${nombreCompleto(socio.nombre, socio.apellidos)}`, parseFloat(importe).toFixed(2), metodo_pago, id]
       );
 
       const { rows: actualizado } = await query('SELECT * FROM socios WHERE id = ?', [id]);

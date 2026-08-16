@@ -67,5 +67,10 @@ export const api = {
   getUsuarios: () => request('/usuarios'),
   crearUsuario: (data) => request('/usuarios', { method: 'POST', body: JSON.stringify(data) }),
   actualizarUsuario: (id, data) => request(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  eliminarUsuario: (id) => request(`/usuarios/${id}`, { method: 'DELETE' })
+  eliminarUsuario: (id) => request(`/usuarios/${id}`, { method: 'DELETE' }),
+
+  getRutinas: (socioId) => request(`/rutinas?socio_id=${socioId}`),
+  crearRutina: (data) => request('/rutinas', { method: 'POST', body: JSON.stringify(data) }),
+  actualizarRutina: (id, data) => request(`/rutinas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  eliminarRutina: (id) => request(`/rutinas/${id}`, { method: 'DELETE' })
 };
