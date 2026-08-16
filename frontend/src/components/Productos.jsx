@@ -5,7 +5,10 @@ import { METODOS_PAGO } from '../lib/metodoPago.js';
 
 const CATEGORIAS = ['Suplementos', 'Accesorios', 'Alimentos', 'Otros'];
 
-const VACIO = { nombre: '', marca: '', categoria: CATEGORIAS[0], precio: '', stock: '', stock_minimo: '' };
+const VACIO = {
+  nombre: '', marca: '', categoria: CATEGORIAS[0], precio: '', stock: '', stock_minimo: '',
+  costo_inicial: '', metodo_pago: 'efectivo'
+};
 
 function formatEuros(n) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
@@ -60,7 +63,9 @@ export default function Productos({ usuario }) {
       categoria: p.categoria || CATEGORIAS[0],
       precio: p.precio,
       stock: p.stock,
-      stock_minimo: p.stock_minimo
+      stock_minimo: p.stock_minimo,
+      costo_inicial: '',
+      metodo_pago: 'efectivo'
     });
     setError('');
     setModo('editar');
@@ -275,6 +280,28 @@ export default function Productos({ usuario }) {
               value={form.stock_minimo}
               onChange={(e) => setForm({ ...form, stock_minimo: e.target.value })}
             />
+            {modo === 'crear' && (
+              <>
+                <input
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  placeholder="Costo del stock inicial (€, opcional)"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.costo_inicial}
+                  onChange={(e) => setForm({ ...form, costo_inicial: e.target.value })}
+                />
+                <select
+                  className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                  value={form.metodo_pago}
+                  onChange={(e) => setForm({ ...form, metodo_pago: e.target.value })}
+                >
+                  {METODOS_PAGO.map((m) => (
+                    <option key={m.valor} value={m.valor}>{m.icono} {m.etiqueta}</option>
+                  ))}
+                </select>
+              </>
+            )}
             {error && <p className="text-red-600 text-sm">{error}</p>}
             <div className="flex justify-end gap-2 mt-1">
               <button type="button" onClick={cerrarModal} className="text-neutral-500 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100">

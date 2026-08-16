@@ -15,9 +15,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Crear un producto
+// Crear un producto. Si se indica un costo inicial (lo que costo adquirir el stock
+// de partida), se registra ademas como gasto en contabilidad con su metodo de pago.
 router.post('/', async (req, res) => {
-  const { nombre, marca, categoria, precio, stock, stock_minimo } = req.body;
+  const { nombre, marca, categoria, precio, stock, stock_minimo, costo_inicial, metodo_pago } = req.body;
   if (!nombre || precio === undefined) {
     return res.status(400).json({ error: 'El nombre y el precio son obligatorios' });
   }
@@ -27,14 +28,33 @@ router.post('/', async (req, res) => {
   if (stock_minimo !== undefined && stock_minimo < 0) {
     return res.status(400).json({ error: 'El stock minimo no puede ser negativo' });
   }
+  const hayCostoInicial = costo_inicial !== undefined && costo_inicial !== null && costo_inicial !== '';
+  if (hayCostoInicial) {
+    if (isNaN(parseFloat(costo_inicial)) || parseFloat(costo_inicial) < 0) {
+      return res.status(400).json({ error: 'El costo inicial no es valido' });
+    }
+    if (!METODOS_PAGO_VALIDOS.includes(metodo_pago)) {
+      return res.status(400).json({ error: "metodo_pago debe ser 'efectivo' o 'tarjeta'" });
+    }
+  }
   try {
-    const { insertId } = await pool.query(
-      `INSERT INTO productos (nombre, marca, categoria, precio, stock, stock_minimo)
-       VALUES (?, ?, ?, ?, COALESCE(?, 0), COALESCE(?, 5))`,
-      [nombre, marca, categoria, precio, stock, stock_minimo]
-    );
-    const { rows } = await pool.query('SELECT * FROM productos WHERE id = ?', [insertId]);
-    res.status(201).json(rows[0]);
+    const resultado = await pool.transaction(async (query) => {
+      const { insertId } = await query(
+        `INSERT INTO productos (nombre, marca, categoria, precio, stock, stock_minimo)
+         VALUES (?, ?, ?, ?, COALESCE(?, 0), COALESCE(?, 5))`,
+        [nombre, marca, categoria, precio, stock, stock_minimo]
+      );
+      if (hayCostoInicial) {
+        await query(
+          `INSERT INTO movimientos (tipo, concepto, importe, metodo_pago, producto_id, cantidad)
+           VALUES ('gasto', ?, ?, ?, ?, ?)`,
+          [`Stock inicial de ${nombre}`, parseFloat(costo_inicial).toFixed(2), metodo_pago, insertId, stock || 0]
+        );
+      }
+      const { rows } = await query('SELECT * FROM productos WHERE id = ?', [insertId]);
+      return rows[0];
+    });
+    res.status(201).json(resultado);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

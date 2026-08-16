@@ -300,17 +300,15 @@ export default function Usuarios({ usuario }) {
                       value={nuevo.importe}
                       onChange={(e) => setNuevo({ ...nuevo, importe: e.target.value })}
                     />
-                    {nuevo.importe && (
-                      <select
-                        className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
-                        value={nuevo.metodo_pago}
-                        onChange={(e) => setNuevo({ ...nuevo, metodo_pago: e.target.value })}
-                      >
-                        {METODOS_PAGO.map((m) => (
-                          <option key={m.valor} value={m.valor}>{m.icono} {m.etiqueta}</option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+                      value={nuevo.metodo_pago}
+                      onChange={(e) => setNuevo({ ...nuevo, metodo_pago: e.target.value })}
+                    >
+                      {METODOS_PAGO.map((m) => (
+                        <option key={m.valor} value={m.valor}>{m.icono} {m.etiqueta}</option>
+                      ))}
+                    </select>
                   </>
                 )}
               </>
