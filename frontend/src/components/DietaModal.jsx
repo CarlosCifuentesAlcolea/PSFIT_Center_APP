@@ -1,9 +1,20 @@
 import { useState } from 'react';
 import Modal from './Modal.jsx';
 import AvisoPopup from './AvisoPopup.jsx';
+import CampoNumerado from './CampoNumerado.jsx';
 import { api } from '../api/client.js';
 
-const DIETA_VACIA = { nombre_dieta: '', fecha_inicio: '', fecha_fin: '', objetivo: '', contenido: '' };
+const DIETA_VACIA = {
+  nombre_dieta: '', fecha_inicio: '', fecha_fin: '', patologias: '', objetivo: '',
+  ayunas: '', antes_dormir: '', suplementacion: '', duracion_suplementacion: ''
+};
+
+function ajustarNumeroComidas(lista, n) {
+  const copia = [...lista];
+  while (copia.length < n) copia.push('');
+  copia.length = Math.max(n, 1);
+  return copia;
+}
 
 // Formulario de crear/editar una dieta, reutilizado desde la ficha del socio
 // y desde el apartado global de Dietas. La cabecera (nombre/apellidos) viene
@@ -15,14 +26,32 @@ export default function DietaModal({ socio, dieta, onClose, onGuardado }) {
           nombre_dieta: dieta.nombre_dieta || '',
           fecha_inicio: dieta.fecha_inicio || '',
           fecha_fin: dieta.fecha_fin || '',
+          patologias: dieta.patologias || '',
           objetivo: dieta.objetivo || '',
-          contenido: dieta.contenido || ''
+          ayunas: dieta.ayunas || '',
+          antes_dormir: dieta.antes_dormir || '',
+          suplementacion: dieta.suplementacion || '',
+          duracion_suplementacion: dieta.duracion_suplementacion || ''
         }
       : DIETA_VACIA
+  );
+  const [comidas, setComidas] = useState(
+    dieta?.comidas && dieta.comidas.length > 0 ? dieta.comidas : ['']
   );
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
+
+  function cambiarNumeroComidas(valor) {
+    const n = Math.max(1, Math.min(10, parseInt(valor, 10) || 1));
+    setComidas((prev) => ajustarNumeroComidas(prev, n));
+  }
+
+  function cambiarComida(indice, valor) {
+    const copia = [...comidas];
+    copia[indice] = valor;
+    setComidas(copia);
+  }
 
   async function guardar(e) {
     e.preventDefault();
@@ -34,10 +63,11 @@ export default function DietaModal({ socio, dieta, onClose, onGuardado }) {
     setGuardando(true);
     setError('');
     try {
+      const datos = { ...form, comidas };
       if (dieta) {
-        await api.actualizarDieta(dieta.id, form);
+        await api.actualizarDieta(dieta.id, datos);
       } else {
-        await api.crearDieta({ ...form, socio_id: socio.id });
+        await api.crearDieta({ ...datos, socio_id: socio.id });
       }
       onGuardado();
     } catch (e) {
@@ -95,18 +125,76 @@ export default function DietaModal({ socio, dieta, onClose, onGuardado }) {
 
         <input
           className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
+          placeholder="Patologías"
+          value={form.patologias}
+          onChange={(e) => setForm({ ...form, patologias: e.target.value })}
+        />
+        <input
+          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
           placeholder="Objetivo"
           value={form.objetivo}
           onChange={(e) => setForm({ ...form, objetivo: e.target.value })}
         />
 
-        <textarea
-          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm font-mono"
-          placeholder="Contenido de la dieta (comidas, cantidades, horarios...)"
-          rows={10}
-          value={form.contenido}
-          onChange={(e) => setForm({ ...form, contenido: e.target.value })}
-        />
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-neutral-400">Ayunas</label>
+          <CampoNumerado
+            value={form.ayunas}
+            onChange={(v) => setForm({ ...form, ayunas: v })}
+            placeholder="Pulsa aquí y escribe; cada línea nueva se numera sola"
+            rows={3}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-neutral-400">¿Cuántas comidas?</label>
+          <input
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm w-24"
+            type="number"
+            min="1"
+            max="10"
+            value={comidas.length}
+            onChange={(e) => cambiarNumeroComidas(e.target.value)}
+          />
+        </div>
+
+        {comidas.map((valor, i) => (
+          <div key={i} className="flex flex-col gap-1">
+            <label className="text-xs text-neutral-400">Comida {i + 1}</label>
+            <CampoNumerado
+              value={valor}
+              onChange={(v) => cambiarComida(i, v)}
+              placeholder="Pulsa aquí y escribe; cada línea nueva se numera sola"
+              rows={3}
+            />
+          </div>
+        ))}
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-neutral-400">Antes de dormir</label>
+          <CampoNumerado
+            value={form.antes_dormir}
+            onChange={(v) => setForm({ ...form, antes_dormir: v })}
+            placeholder="Pulsa aquí y escribe; cada línea nueva se numera sola"
+            rows={3}
+          />
+        </div>
+
+        <div className="border-t border-neutral-100 pt-3 flex flex-col gap-1">
+          <label className="text-xs text-neutral-400">Suplementación</label>
+          <CampoNumerado
+            value={form.suplementacion}
+            onChange={(v) => setForm({ ...form, suplementacion: v })}
+            placeholder="Pulsa aquí y escribe; cada línea nueva se numera sola"
+            rows={3}
+          />
+          <input
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm mt-1"
+            placeholder="¿Durante cuánto tiempo tomarlo? (ej. 4 semanas)"
+            value={form.duracion_suplementacion}
+            onChange={(e) => setForm({ ...form, duracion_suplementacion: e.target.value })}
+          />
+        </div>
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
 

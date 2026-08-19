@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool');
 
-const CAMPOS_TEXTO = ['nombre_dieta', 'fecha_inicio', 'fecha_fin', 'objetivo', 'contenido'];
+const CAMPOS_TEXTO = [
+  'nombre_dieta', 'fecha_inicio', 'fecha_fin', 'patologias', 'objetivo',
+  'ayunas', 'antes_dormir', 'suplementacion', 'duracion_suplementacion'
+];
 
 // mysql2 devuelve las columnas DATE como objetos Date construidos en la zona
 // horaria local del proceso. Usar los getters locales (no UTC) para volver a
@@ -17,8 +20,15 @@ function formatFechaLocal(valor) {
 }
 
 function parseDieta(row) {
+  let comidas = [];
+  try {
+    comidas = row.comidas ? JSON.parse(row.comidas) : [];
+  } catch {
+    comidas = [];
+  }
   return {
     ...row,
+    comidas,
     fecha_inicio: formatFechaLocal(row.fecha_inicio),
     fecha_fin: formatFechaLocal(row.fecha_fin)
   };
@@ -39,16 +49,17 @@ router.get('/', async (req, res) => {
 });
 
 // Crear una dieta para un socio. La fecha de inicio es obligatoria; el resto
-// de campos son texto libre.
+// de campos son texto libre, y comidas es un array (uno por cada bloque "Comida N").
 router.post('/', async (req, res) => {
-  const { socio_id, fecha_inicio } = req.body;
+  const { socio_id, fecha_inicio, comidas } = req.body;
   if (!socio_id) return res.status(400).json({ error: 'socio_id es obligatorio' });
   if (!fecha_inicio) return res.status(400).json({ error: 'La fecha de inicio es obligatoria' });
   try {
     const valores = CAMPOS_TEXTO.map((campo) => req.body[campo]);
     const { insertId } = await pool.query(
-      `INSERT INTO dietas (socio_id, ${CAMPOS_TEXTO.join(', ')}) VALUES (?, ${CAMPOS_TEXTO.map(() => '?').join(', ')})`,
-      [socio_id, ...valores]
+      `INSERT INTO dietas (socio_id, ${CAMPOS_TEXTO.join(', ')}, comidas)
+       VALUES (?, ${CAMPOS_TEXTO.map(() => '?').join(', ')}, ?)`,
+      [socio_id, ...valores, JSON.stringify(comidas || [])]
     );
     const { rows } = await pool.query('SELECT * FROM dietas WHERE id = ?', [insertId]);
     res.status(201).json(parseDieta(rows[0]));
@@ -60,13 +71,13 @@ router.post('/', async (req, res) => {
 // Actualizar una dieta existente
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { fecha_inicio } = req.body;
+  const { fecha_inicio, comidas } = req.body;
   if (!fecha_inicio) return res.status(400).json({ error: 'La fecha de inicio es obligatoria' });
   try {
     const valores = CAMPOS_TEXTO.map((campo) => req.body[campo]);
     const { affectedRows } = await pool.query(
-      `UPDATE dietas SET ${CAMPOS_TEXTO.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`,
-      [...valores, id]
+      `UPDATE dietas SET ${CAMPOS_TEXTO.map((c) => `${c} = ?`).join(', ')}, comidas = ? WHERE id = ?`,
+      [...valores, JSON.stringify(comidas || []), id]
     );
     if (affectedRows === 0) return res.status(404).json({ error: 'Dieta no encontrada' });
     const { rows } = await pool.query('SELECT * FROM dietas WHERE id = ?', [id]);

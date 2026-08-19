@@ -87,8 +87,13 @@ CREATE TABLE IF NOT EXISTS dietas (
   nombre_dieta VARCHAR(150) NOT NULL DEFAULT 'Dieta',
   fecha_inicio DATE NOT NULL,
   fecha_fin DATE,
+  patologias VARCHAR(300),
   objetivo VARCHAR(300),
-  contenido TEXT,
+  ayunas TEXT,
+  antes_dormir TEXT,
+  comidas TEXT,
+  suplementacion TEXT,
+  duracion_suplementacion VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (socio_id) REFERENCES socios(id) ON DELETE CASCADE
 );
