@@ -157,10 +157,10 @@ export default function Productos({ usuario }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <div className="flex gap-2 flex-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 flex-1">
           <input
-            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1 max-w-xs"
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[180px] sm:max-w-xs"
             placeholder="Buscar por nombre o marca..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
@@ -183,8 +183,8 @@ export default function Productos({ usuario }) {
 
       {error && !modo && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-      <div className="max-h-[28rem] overflow-y-auto border border-neutral-100 rounded-lg">
-        <table className="w-full text-sm border-collapse">
+      <div className="max-h-[28rem] overflow-auto border border-neutral-100 rounded-lg">
+        <table className="w-full min-w-[640px] text-sm border-collapse">
           <thead>
             <tr className="text-left text-neutral-400 border-b border-neutral-200 bg-white sticky top-0">
               <th className="py-2 px-3 font-normal">Producto</th>
@@ -232,7 +232,7 @@ export default function Productos({ usuario }) {
 
       {(modo === 'crear' || modo === 'editar') && (
         <Modal onClose={cerrarModal}>
-          <form onSubmit={guardarProducto} className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg">
+          <form onSubmit={guardarProducto} className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg max-h-[85vh] overflow-y-auto">
             <p className="text-sm font-medium mb-1">{modo === 'editar' ? 'Editar producto' : 'Añadir producto'}</p>
             <input
               className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"

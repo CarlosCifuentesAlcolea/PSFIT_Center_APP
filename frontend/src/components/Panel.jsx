@@ -18,14 +18,14 @@ export default function Panel() {
 
   return (
     <div>
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <Metric label="Socios activos" value={data.socios_activos} />
         <Metric label="Ingresos del mes" value={formatEuros(data.ingresos_mes)} tone="text-green-600" />
         <Metric label="Gastos del mes" value={formatEuros(data.gastos_mes)} tone="text-red-600" />
         <Metric label="Stock bajo" value={`${data.stock_bajo.length} productos`} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="bg-neutral-50 rounded-lg p-4">
           <p className="text-sm font-medium mb-3">Altas recientes</p>
           <div className="flex flex-col gap-2">

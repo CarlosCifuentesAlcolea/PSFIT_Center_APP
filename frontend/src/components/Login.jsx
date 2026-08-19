@@ -28,7 +28,7 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div className="h-screen flex items-center justify-center bg-white">
+    <div className="h-screen flex items-center justify-center bg-white px-4">
       <form onSubmit={entrar} className="w-full max-w-xs flex flex-col gap-3">
         <img src="/logo.png" alt="PS FIT Center" className="w-44 h-44 mx-auto mb-1 object-contain" />
         <p className="text-lg font-medium text-center mb-2">PS FIT CENTER</p>

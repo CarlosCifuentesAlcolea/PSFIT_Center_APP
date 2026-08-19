@@ -215,10 +215,10 @@ export default function Usuarios({ usuario }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <div className="flex gap-2 flex-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 flex-1">
           <input
-            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1 max-w-xs"
+            className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[180px] sm:max-w-xs"
             placeholder="Buscar por nombre, DNI, email o teléfono..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
@@ -255,8 +255,8 @@ export default function Usuarios({ usuario }) {
 
       {error && !modalAbierto && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-      <div className="max-h-[28rem] overflow-y-auto border border-neutral-100 rounded-lg">
-        <table className="w-full text-sm border-collapse">
+      <div className="max-h-[28rem] overflow-auto border border-neutral-100 rounded-lg">
+        <table className="w-full min-w-[640px] text-sm border-collapse">
           <thead>
             <tr className="text-left text-neutral-400 border-b border-neutral-200 bg-white sticky top-0">
               <th className="py-2 px-3 font-normal">Nombre</th>
@@ -310,7 +310,7 @@ export default function Usuarios({ usuario }) {
         <Modal onClose={() => setModalAbierto(false)}>
           <form
             onSubmit={guardarSocio}
-            className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg"
+            className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg max-h-[85vh] overflow-y-auto"
           >
             <p className="text-sm font-medium mb-1">{editandoId ? 'Editar socio' : 'Añadir socio'}</p>
 
@@ -446,7 +446,7 @@ export default function Usuarios({ usuario }) {
 
       {viendo && (
         <Modal onClose={() => setViendo(null)}>
-          <div className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg">
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm flex flex-col gap-3 shadow-lg max-h-[85vh] overflow-y-auto">
             <p className="text-sm font-medium">{nombreCompleto(viendo)}</p>
 
             <div className="text-sm text-neutral-600 flex flex-col gap-1.5">

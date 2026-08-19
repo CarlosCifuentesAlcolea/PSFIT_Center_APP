@@ -30,6 +30,7 @@ export default function App() {
   const [tab, setTab] = useState('panel');
   const [usuario, setUsuario] = useState(null);
   const [verificando, setVerificando] = useState(true);
+  const [sidebarAbierto, setSidebarAbierto] = useState(false);
 
   useEffect(() => {
     api.me().then(setUsuario).catch(() => {}).finally(() => setVerificando(false));
@@ -57,12 +58,26 @@ export default function App() {
 
   return (
     <div className="h-screen flex bg-white text-neutral-800">
-      <Sidebar active={tabActiva} onChange={setTab} usuario={usuario} onLogout={cerrarSesion} />
+      <Sidebar
+        active={tabActiva}
+        onChange={setTab}
+        usuario={usuario}
+        onLogout={cerrarSesion}
+        abierto={sidebarAbierto}
+        onCerrar={() => setSidebarAbierto(false)}
+      />
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="border-b border-neutral-200 px-6 py-4">
+        <header className="border-b border-neutral-200 px-4 sm:px-6 py-4 flex items-center gap-3">
+          <button
+            onClick={() => setSidebarAbierto(true)}
+            className="md:hidden text-neutral-600 hover:text-brand-dark text-xl leading-none"
+            aria-label="Abrir menú"
+          >
+            ☰
+          </button>
           <p className="text-base font-medium">{TITLES[tabActiva]}</p>
         </header>
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
           {tabActiva === 'panel' && <Panel />}
           {tabActiva === 'usuarios' && <Usuarios usuario={usuario} />}
           {tabActiva === 'productos' && <Productos usuario={usuario} />}
