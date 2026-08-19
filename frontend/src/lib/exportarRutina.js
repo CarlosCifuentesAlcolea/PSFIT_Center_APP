@@ -14,6 +14,13 @@ function formatFecha(valor) {
   return new Date(`${valor}T00:00:00`).toLocaleDateString('es-ES');
 }
 
+// 'YYYY-MM-DD' -> 'DD-MM'
+function diaMes(valor) {
+  if (!valor) return '';
+  const [, mes, dia] = valor.split('-');
+  return `${dia}-${mes}`;
+}
+
 export async function generarExcelRutina(socio, rutina) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'PS FIT Center';
@@ -108,8 +115,8 @@ export async function generarExcelRutina(socio, rutina) {
   const url = URL.createObjectURL(blob);
   const enlace = document.createElement('a');
   enlace.href = url;
-  const base = `${rutina.nombre_rutina || 'rutina'}_${socio.nombre}_${socio.apellidos || ''}`.trim();
-  enlace.download = `${base.replace(/[^a-z0-9]+/gi, '_')}.xlsx`;
+  const base = `${diaMes(rutina.fecha_inicio)}_${diaMes(rutina.fecha_fin)}`;
+  enlace.download = `${base.replace(/[^a-z0-9_-]+/gi, '_')}.xlsx`;
   enlace.click();
   URL.revokeObjectURL(url);
 }
