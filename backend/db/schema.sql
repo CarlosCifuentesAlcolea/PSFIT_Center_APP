@@ -81,6 +81,19 @@ CREATE TABLE IF NOT EXISTS tipos_ejercicio (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS dietas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  socio_id BIGINT UNSIGNED NOT NULL,
+  nombre_dieta VARCHAR(150) NOT NULL DEFAULT 'Dieta',
+  fecha_inicio DATE NOT NULL,
+  fecha_fin DATE,
+  objetivo VARCHAR(300),
+  contenido TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (socio_id) REFERENCES socios(id) ON DELETE CASCADE
+);
+
 CREATE INDEX idx_movimientos_fecha ON movimientos(fecha);
 CREATE INDEX idx_socios_estado ON socios(estado);
 CREATE INDEX idx_rutinas_socio ON rutinas(socio_id);
+CREATE INDEX idx_dietas_socio ON dietas(socio_id);

@@ -3,6 +3,8 @@ import { api } from '../api/client.js';
 import Modal from './Modal.jsx';
 import RutinaModal from './RutinaModal.jsx';
 import RutinaVista from './RutinaVista.jsx';
+import DietaModal from './DietaModal.jsx';
+import DietaVista from './DietaVista.jsx';
 import { METODOS_PAGO, etiquetaMetodoPago } from '../lib/metodoPago.js';
 import { validarDni } from '../lib/dni.js';
 
@@ -39,6 +41,9 @@ export default function Usuarios({ usuario }) {
   const [rutinas, setRutinas] = useState([]);
   const [modoRutina, setModoRutina] = useState(null); // 'crear' | 'editar' | 'ver'
   const [rutinaActiva, setRutinaActiva] = useState(null);
+  const [dietas, setDietas] = useState([]);
+  const [modoDieta, setModoDieta] = useState(null); // 'crear' | 'editar' | 'ver'
+  const [dietaActiva, setDietaActiva] = useState(null);
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroPlan, setFiltroPlan] = useState('todos');
@@ -55,14 +60,21 @@ export default function Usuarios({ usuario }) {
     api.getRutinas(viendo.id).then(setRutinas).catch(() => setRutinas([]));
   }
 
+  function cargarDietas() {
+    if (!viendo) return;
+    api.getDietas(viendo.id).then(setDietas).catch(() => setDietas([]));
+  }
+
   useEffect(() => {
     if (!viendo) {
       setHistorialPagos([]);
       setRutinas([]);
+      setDietas([]);
       return;
     }
     api.getMovimientos({ socio_id: viendo.id }).then(setHistorialPagos).catch(() => setHistorialPagos([]));
     cargarRutinas();
+    cargarDietas();
   }, [viendo]);
 
   const sociosFiltrados = useMemo(() => {
@@ -174,6 +186,31 @@ export default function Usuarios({ usuario }) {
   async function eliminarRutina(id) {
     await api.eliminarRutina(id);
     cargarRutinas();
+  }
+
+  function abrirCrearDieta() {
+    setModoDieta('crear');
+    setDietaActiva(null);
+  }
+
+  function abrirVerDieta(d) {
+    setModoDieta('ver');
+    setDietaActiva(d);
+  }
+
+  function abrirEditarDieta(d) {
+    setModoDieta('editar');
+    setDietaActiva(d);
+  }
+
+  function cerrarModalDieta() {
+    setModoDieta(null);
+    setDietaActiva(null);
+  }
+
+  async function eliminarDieta(id) {
+    await api.eliminarDieta(id);
+    cargarDietas();
   }
 
   return (
@@ -485,9 +522,38 @@ export default function Usuarios({ usuario }) {
               )}
             </div>
 
-            <div>
-              <p className="text-xs font-medium text-neutral-500 mb-1.5">Dietas asignadas</p>
-              <p className="text-sm text-neutral-400">Sin dietas asignadas todavía.</p>
+            <div className="border-t border-neutral-100 pt-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-medium text-neutral-500">Dietas asignadas</p>
+                <button onClick={abrirCrearDieta} className="text-xs text-brand-dark hover:underline">
+                  + Nueva dieta
+                </button>
+              </div>
+              {dietas.length === 0 ? (
+                <p className="text-sm text-neutral-400">Sin dietas asignadas todavía.</p>
+              ) : (
+                <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+                  {dietas.map((d) => (
+                    <div key={d.id} className="flex items-center justify-between text-sm gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate">{d.nombre_dieta}</p>
+                        {d.objetivo && <p className="text-xs text-neutral-400 truncate">{d.objetivo}</p>}
+                      </div>
+                      <div className="flex gap-2 whitespace-nowrap">
+                        <button onClick={() => abrirVerDieta(d)} className="text-neutral-400 hover:text-brand-dark text-xs">
+                          Ver
+                        </button>
+                        <button onClick={() => abrirEditarDieta(d)} className="text-neutral-400 hover:text-brand-dark text-xs">
+                          Editar
+                        </button>
+                        <button onClick={() => eliminarDieta(d.id)} className="text-neutral-400 hover:text-red-600 text-xs">
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end mt-1">
@@ -549,6 +615,22 @@ export default function Usuarios({ usuario }) {
 
       {modoRutina === 'ver' && viendo && rutinaActiva && (
         <RutinaVista socio={viendo} rutina={rutinaActiva} onClose={cerrarModalRutina} />
+      )}
+
+      {(modoDieta === 'crear' || modoDieta === 'editar') && viendo && (
+        <DietaModal
+          socio={viendo}
+          dieta={modoDieta === 'editar' ? dietaActiva : null}
+          onClose={cerrarModalDieta}
+          onGuardado={() => {
+            cerrarModalDieta();
+            cargarDietas();
+          }}
+        />
+      )}
+
+      {modoDieta === 'ver' && viendo && dietaActiva && (
+        <DietaVista socio={viendo} dieta={dietaActiva} onClose={cerrarModalDieta} />
       )}
     </div>
   );

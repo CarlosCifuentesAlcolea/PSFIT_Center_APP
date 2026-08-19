@@ -10,6 +10,7 @@ const movimientosRoutes = require('./routes/movimientos');
 const dashboardRoutes = require('./routes/dashboard');
 const rutinasRoutes = require('./routes/rutinas');
 const tiposEjercicioRoutes = require('./routes/tiposEjercicio');
+const dietasRoutes = require('./routes/dietas');
 const { requireAuth } = require('./middleware/auth');
 
 const origenesPermitidos = [
@@ -45,6 +46,7 @@ app.use('/api/movimientos', requireAuth, movimientosRoutes);
 app.use('/api/dashboard', requireAuth, dashboardRoutes);
 app.use('/api/rutinas', requireAuth, rutinasRoutes);
 app.use('/api/tipos-ejercicio', requireAuth, tiposEjercicioRoutes);
+app.use('/api/dietas', requireAuth, dietasRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

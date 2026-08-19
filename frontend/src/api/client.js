@@ -77,5 +77,10 @@ export const api = {
   getTiposEjercicio: () => request('/tipos-ejercicio'),
   crearTipoEjercicio: (nombre) => request('/tipos-ejercicio', { method: 'POST', body: JSON.stringify({ nombre }) }),
   actualizarTipoEjercicio: (id, nombre) => request(`/tipos-ejercicio/${id}`, { method: 'PUT', body: JSON.stringify({ nombre }) }),
-  eliminarTipoEjercicio: (id) => request(`/tipos-ejercicio/${id}`, { method: 'DELETE' })
+  eliminarTipoEjercicio: (id) => request(`/tipos-ejercicio/${id}`, { method: 'DELETE' }),
+
+  getDietas: (socioId) => request(socioId ? `/dietas?socio_id=${socioId}` : '/dietas'),
+  crearDieta: (data) => request('/dietas', { method: 'POST', body: JSON.stringify(data) }),
+  actualizarDieta: (id, data) => request(`/dietas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  eliminarDieta: (id) => request(`/dietas/${id}`, { method: 'DELETE' })
 };
