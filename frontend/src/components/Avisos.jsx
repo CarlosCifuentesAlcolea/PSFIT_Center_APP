@@ -40,26 +40,28 @@ export default function Avisos() {
         {stockBajo.length === 0 ? (
           <p className="text-sm text-neutral-400">Todo el stock está en orden.</p>
         ) : (
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="text-left text-neutral-400 border-b border-neutral-200">
-                <th className="py-2 font-normal">Producto</th>
-                <th className="py-2 font-normal">Categoría</th>
-                <th className="py-2 font-normal">Stock</th>
-                <th className="py-2 font-normal">Stock mínimo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stockBajo.map((p) => (
-                <tr key={p.id} className="border-b border-neutral-100">
-                  <td className="py-2.5">{p.nombre}</td>
-                  <td className="py-2.5 text-neutral-500">{p.categoria || '—'}</td>
-                  <td className="py-2.5 text-red-600">{p.stock} uds.</td>
-                  <td className="py-2.5 text-neutral-500">{p.stock_minimo} uds.</td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[420px] text-sm border-collapse">
+              <thead>
+                <tr className="text-left text-neutral-400 border-b border-neutral-200">
+                  <th className="py-2 font-normal">Producto</th>
+                  <th className="py-2 font-normal">Categoría</th>
+                  <th className="py-2 font-normal">Stock</th>
+                  <th className="py-2 font-normal">Stock mínimo</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stockBajo.map((p) => (
+                  <tr key={p.id} className="border-b border-neutral-100">
+                    <td className="py-2.5">{p.nombre}</td>
+                    <td className="py-2.5 text-neutral-500">{p.categoria || '—'}</td>
+                    <td className="py-2.5 text-red-600">{p.stock} uds.</td>
+                    <td className="py-2.5 text-neutral-500">{p.stock_minimo} uds.</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
@@ -68,32 +70,34 @@ export default function Avisos() {
         {sinPagar.length === 0 ? (
           <p className="text-sm text-neutral-400">No hay pagos pendientes.</p>
         ) : (
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="text-left text-neutral-400 border-b border-neutral-200">
-                <th className="py-2 font-normal">Nombre</th>
-                <th className="py-2 font-normal">Plan</th>
-                <th className="py-2 font-normal">Estado</th>
-                <th className="py-2 font-normal">Próximo pago</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sinPagar.map((s) => (
-                <tr key={s.id} className="border-b border-neutral-100">
-                  <td className="py-2.5">{[s.nombre, s.apellidos].filter(Boolean).join(' ')}</td>
-                  <td className="py-2.5 text-neutral-500 capitalize">{s.plan}</td>
-                  <td className="py-2.5">
-                    <span className={`px-2.5 py-0.5 rounded-md text-xs ${ESTADO_STYLES[s.estado] || ''}`}>
-                      {s.estado.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="py-2.5 text-red-600">
-                    {s.proximo_pago ? new Date(s.proximo_pago).toLocaleDateString('es-ES') : '—'}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[420px] text-sm border-collapse">
+              <thead>
+                <tr className="text-left text-neutral-400 border-b border-neutral-200">
+                  <th className="py-2 font-normal">Nombre</th>
+                  <th className="py-2 font-normal">Plan</th>
+                  <th className="py-2 font-normal">Estado</th>
+                  <th className="py-2 font-normal">Próximo pago</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sinPagar.map((s) => (
+                  <tr key={s.id} className="border-b border-neutral-100">
+                    <td className="py-2.5">{[s.nombre, s.apellidos].filter(Boolean).join(' ')}</td>
+                    <td className="py-2.5 text-neutral-500 capitalize">{s.plan}</td>
+                    <td className="py-2.5">
+                      <span className={`px-2.5 py-0.5 rounded-md text-xs ${ESTADO_STYLES[s.estado] || ''}`}>
+                        {s.estado.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="py-2.5 text-red-600">
+                      {s.proximo_pago ? new Date(s.proximo_pago).toLocaleDateString('es-ES') : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>

@@ -114,7 +114,7 @@ export default function RutinaModal({ socio, rutina, onClose, onGuardado }) {
           onChange={(e) => setForm({ ...form, nombre_rutina: e.target.value })}
         />
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input
             className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm"
             placeholder="Edad"
@@ -135,7 +135,7 @@ export default function RutinaModal({ socio, rutina, onClose, onGuardado }) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-neutral-400">Fecha de inicio *</label>
             <input

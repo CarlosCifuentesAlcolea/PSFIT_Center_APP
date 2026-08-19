@@ -77,9 +77,9 @@ export default function Dietas() {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <input
-          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1 max-w-xs"
+          className="border border-neutral-200 rounded-lg px-3 py-1.5 text-sm flex-1 sm:max-w-xs"
           placeholder="Buscar por nombre, apellidos o DNI..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
@@ -88,8 +88,8 @@ export default function Dietas() {
 
       {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-      <div className="max-h-[32rem] overflow-y-auto border border-neutral-100 rounded-lg">
-        <table className="w-full text-sm border-collapse">
+      <div className="max-h-[32rem] overflow-auto border border-neutral-100 rounded-lg">
+        <table className="w-full min-w-[520px] text-sm border-collapse">
           <thead>
             <tr className="text-left text-neutral-400 border-b border-neutral-200 bg-white sticky top-0">
               <th className="py-2 px-3 font-normal">Nombre</th>

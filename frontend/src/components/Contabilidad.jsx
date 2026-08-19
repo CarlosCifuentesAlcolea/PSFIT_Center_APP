@@ -203,7 +203,7 @@ export default function Contabilidad() {
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <div className="bg-neutral-50 rounded-lg p-4">
           <p className="text-xs text-neutral-400 mb-1">Total ingresos</p>
           <p className="text-2xl font-medium text-green-600">{formatEuros(ingresos)}</p>
@@ -214,8 +214,8 @@ export default function Contabilidad() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-4 gap-2">
-        <div className="flex gap-1">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-2">
+        <div className="flex flex-wrap gap-1">
           <button
             onClick={() => setVista('mes')}
             className={`text-sm px-3 py-1.5 rounded-lg ${vista === 'mes' ? 'bg-brand/20 text-brand-dark font-medium' : 'text-neutral-500 hover:bg-neutral-100'}`}
@@ -254,7 +254,7 @@ export default function Contabilidad() {
             ))}
           </select>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {vista === 'mes' && (
             <>
               <button
@@ -281,60 +281,62 @@ export default function Contabilidad() {
 
       {error && !modalAbierto && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-      {vista === 'mes' ? (
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="text-left text-neutral-400 border-b border-neutral-200">
-              <th className="py-2 font-normal">Fecha</th>
-              <th className="py-2 font-normal">Concepto</th>
-              <th className="py-2 font-normal">Método</th>
-              <th className="py-2 font-normal text-right">Importe</th>
-              <th className="py-2 font-normal"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {movimientosFiltrados.map((m) => (
-              <tr key={m.id} className="border-b border-neutral-100">
-                <td className="py-2.5 text-neutral-500">{new Date(m.fecha).toLocaleDateString('es-ES')}</td>
-                <td className="py-2.5">{m.concepto}</td>
-                <td className="py-2.5 text-neutral-500">{etiquetaMetodoPago(m.metodo_pago)}</td>
-                <td className={`py-2.5 text-right ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
-                  {m.tipo === 'ingreso' ? '+' : '−'}{formatEuros(m.importe)}
-                </td>
-                <td className="py-2.5 text-right">
-                  <button onClick={() => eliminarMovimiento(m.id)} className="text-neutral-400 hover:text-red-600 text-xs">
-                    Eliminar
-                  </button>
-                </td>
+      <div className="overflow-x-auto">
+        {vista === 'mes' ? (
+          <table className="w-full min-w-[560px] text-sm border-collapse">
+            <thead>
+              <tr className="text-left text-neutral-400 border-b border-neutral-200">
+                <th className="py-2 font-normal">Fecha</th>
+                <th className="py-2 font-normal">Concepto</th>
+                <th className="py-2 font-normal">Método</th>
+                <th className="py-2 font-normal text-right">Importe</th>
+                <th className="py-2 font-normal"></th>
               </tr>
-            ))}
-            {movimientosFiltrados.length === 0 && (
-              <tr><td colSpan={5} className="py-4 text-center text-neutral-400">Sin movimientos ese mes.</td></tr>
-            )}
-          </tbody>
-        </table>
-      ) : (
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="text-left text-neutral-400 border-b border-neutral-200">
-              <th className="py-2 font-normal">Mes</th>
-              <th className="py-2 font-normal text-right">Ingresos</th>
-              <th className="py-2 font-normal text-right">Gastos</th>
-              <th className="py-2 font-normal text-right">Balance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {porMes.map((m) => (
-              <tr key={m.nombreMes} className="border-b border-neutral-100">
-                <td className="py-2.5">{m.nombreMes}</td>
-                <td className="py-2.5 text-right text-green-600">{m.ing ? formatEuros(m.ing) : '—'}</td>
-                <td className="py-2.5 text-right text-red-600">{m.gas ? formatEuros(m.gas) : '—'}</td>
-                <td className="py-2.5 text-right font-medium">{formatEuros(m.ing - m.gas)}</td>
+            </thead>
+            <tbody>
+              {movimientosFiltrados.map((m) => (
+                <tr key={m.id} className="border-b border-neutral-100">
+                  <td className="py-2.5 text-neutral-500">{new Date(m.fecha).toLocaleDateString('es-ES')}</td>
+                  <td className="py-2.5">{m.concepto}</td>
+                  <td className="py-2.5 text-neutral-500">{etiquetaMetodoPago(m.metodo_pago)}</td>
+                  <td className={`py-2.5 text-right ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
+                    {m.tipo === 'ingreso' ? '+' : '−'}{formatEuros(m.importe)}
+                  </td>
+                  <td className="py-2.5 text-right">
+                    <button onClick={() => eliminarMovimiento(m.id)} className="text-neutral-400 hover:text-red-600 text-xs">
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {movimientosFiltrados.length === 0 && (
+                <tr><td colSpan={5} className="py-4 text-center text-neutral-400">Sin movimientos ese mes.</td></tr>
+              )}
+            </tbody>
+          </table>
+        ) : (
+          <table className="w-full min-w-[420px] text-sm border-collapse">
+            <thead>
+              <tr className="text-left text-neutral-400 border-b border-neutral-200">
+                <th className="py-2 font-normal">Mes</th>
+                <th className="py-2 font-normal text-right">Ingresos</th>
+                <th className="py-2 font-normal text-right">Gastos</th>
+                <th className="py-2 font-normal text-right">Balance</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {porMes.map((m) => (
+                <tr key={m.nombreMes} className="border-b border-neutral-100">
+                  <td className="py-2.5">{m.nombreMes}</td>
+                  <td className="py-2.5 text-right text-green-600">{m.ing ? formatEuros(m.ing) : '—'}</td>
+                  <td className="py-2.5 text-right text-red-600">{m.gas ? formatEuros(m.gas) : '—'}</td>
+                  <td className="py-2.5 text-right font-medium">{formatEuros(m.ing - m.gas)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
       {modalAbierto && (
         <Modal onClose={() => setModalAbierto(false)}>

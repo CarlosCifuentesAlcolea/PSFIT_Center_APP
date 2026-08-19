@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Modal from './Modal.jsx';
 import { generarPdfDieta } from '../lib/exportarDietaPdf.js';
+import { generarExcelDieta } from '../lib/exportarDietaExcel.js';
 
 function formatFecha(valor) {
   if (!valor) return '—';
@@ -20,14 +21,23 @@ function Seccion({ titulo, contenido }) {
 }
 
 export default function DietaVista({ socio, dieta, onClose }) {
-  const [generando, setGenerando] = useState(false);
+  const [generando, setGenerando] = useState('');
 
-  async function descargar() {
-    setGenerando(true);
+  async function descargarPdf() {
+    setGenerando('pdf');
     try {
       await generarPdfDieta(socio, dieta);
     } finally {
-      setGenerando(false);
+      setGenerando('');
+    }
+  }
+
+  async function descargarExcel() {
+    setGenerando('excel');
+    try {
+      await generarExcelDieta(socio, dieta);
+    } finally {
+      setGenerando('');
     }
   }
 
@@ -70,16 +80,23 @@ export default function DietaVista({ socio, dieta, onClose }) {
           )}
         </div>
 
-        <div className="flex justify-end gap-2 mt-1">
+        <div className="flex flex-wrap justify-end gap-2 mt-1">
           <button onClick={onClose} className="text-neutral-500 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100">
             Cerrar
           </button>
           <button
-            onClick={descargar}
-            disabled={generando}
+            onClick={descargarExcel}
+            disabled={!!generando}
+            className="border border-neutral-200 text-neutral-600 text-sm px-4 py-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-50"
+          >
+            {generando === 'excel' ? 'Generando...' : 'Generar Excel'}
+          </button>
+          <button
+            onClick={descargarPdf}
+            disabled={!!generando}
             className="bg-brand-dark text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
           >
-            {generando ? 'Generando...' : 'Generar PDF'}
+            {generando === 'pdf' ? 'Generando...' : 'Generar PDF'}
           </button>
         </div>
       </div>
